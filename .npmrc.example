@@ -1,0 +1,15 @@
+# Example NPM configuration for uzp-cli
+# Copy this file to .npmrc and uncomment lines as needed
+
+# For GitHub Packages (if needed)
+# @hungnguyen18:registry=https://npm.pkg.github.com
+
+# For private registries
+# registry=https://your-private-registry.com
+
+# Authentication token (replace with your actual token)
+# //npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+# //your-private-registry.com/:_authToken=${NPM_TOKEN}
+
+# Default registry (uncomment to use npm default)
+# registry=https://registry.npmjs.org/ 

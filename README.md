@@ -44,6 +44,18 @@ cd uzp-cli
 go build -o uzp
 ```
 
+### NPM Registry Configuration
+
+If you need to use a specific NPM registry:
+
+```bash
+# Copy the example configuration
+cp .npmrc.example .npmrc
+
+# Edit .npmrc with your registry settings
+# Note: .npmrc is ignored by git for security
+```
+
 ## Quick Start
 
 ### 1. Initialize vault
