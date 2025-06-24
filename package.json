@@ -1,6 +1,6 @@
 {
   "name": "@hungnguyen18/uzp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "User's Zecure Pocket - A secure CLI tool for managing secrets",
   "keywords": [
     "cli",

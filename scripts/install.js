@@ -87,14 +87,31 @@ async function getLatestRelease() {
       
       response.on('end', () => {
         try {
+          if (response.statusCode === 404) {
+            reject(new Error('No GitHub releases found. Please create a release first.'));
+            return;
+          }
+          
+          if (response.statusCode !== 200) {
+            reject(new Error(`GitHub API error: ${response.statusCode} ${response.statusMessage}`));
+            return;
+          }
+          
           const release = JSON.parse(data);
+          
+          // Check if release has assets
+          if (!release.assets || !Array.isArray(release.assets) || release.assets.length === 0) {
+            reject(new Error('No release assets found. Please upload binaries to the GitHub release.'));
+            return;
+          }
+          
           resolve(release);
         } catch (err) {
-          reject(err);
+          reject(new Error(`Failed to parse GitHub release data: ${err.message}`));
         }
       });
     }).on('error', (err) => {
-      reject(err);
+      reject(new Error(`Failed to fetch GitHub release: ${err.message}`));
     });
   });
 }
@@ -113,7 +130,8 @@ async function install() {
     const asset = release.assets.find(asset => asset.name === binaryName);
     
     if (!asset) {
-      throw new Error(`Binary not found for platform: ${binaryName}`);
+      const availableAssets = release.assets.map(a => a.name).join(', ');
+      throw new Error(`Binary not found for platform: ${binaryName}\nAvailable assets: ${availableAssets}`);
     }
     
     console.log(`⬇️  Downloading from: ${asset.browser_download_url}`);
@@ -136,10 +154,19 @@ async function install() {
   } catch (error) {
     console.error('❌ Installation failed:', error.message);
     console.log('');
+    
+    if (error.message.includes('No GitHub releases found') || error.message.includes('No release assets found')) {
+      console.log('📋 This package requires a GitHub release with pre-built binaries.');
+      console.log('   The maintainer needs to create a release at:');
+      console.log('   https://github.com/hungnguyen18/uzp/releases');
+      console.log('');
+    }
+    
     console.log('🔧 Manual installation:');
     console.log('   git clone https://github.com/hungnguyen18/uzp.git');
     console.log('   cd uzp');
     console.log('   go build -o uzp');
+    console.log('   sudo mv uzp /usr/local/bin/  # Optional: make globally available');
     process.exit(1);
   }
 }
