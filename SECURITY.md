@@ -161,7 +161,7 @@ uzp list | wc -l  # Monitor number of stored secrets
 
 ## Contact Information
 
-- **Security Contact**: security@hungnguyen.dev
+- **Security Contact**: hungnguyen18.dev@gmail.com
 - **General Issues**: https://github.com/hungnguyen18/uzp-cli/issues  
 - **Security Advisories**: https://github.com/hungnguyen18/uzp-cli/security/advisories
 - **GPG Key**: Available on request for encrypted communication
