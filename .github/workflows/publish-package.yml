@@ -8,6 +8,8 @@ on:
 jobs:
   publish-npm:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       npm-published: ${{ steps.npm-publish.outputs.published }}
       npm-version: ${{ steps.get-version.outputs.version }}
@@ -157,6 +159,8 @@ jobs:
 
   summary:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     needs: [publish-npm, publish-github-packages]
     if: always()
     steps:
