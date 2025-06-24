@@ -12,14 +12,14 @@ UZP-CLI is a **security-focused** tool that handles sensitive data. Every contri
 
 ## 📋 **Table of Contents**
 
-- [Getting Started](#getting-started)
-- [Development Workflow](#development-workflow)
-- [Code Standards](#code-standards)
-- [Security Guidelines](#security-guidelines)
-- [Testing Requirements](#testing-requirements)
-- [Commit Standards](#commit-standards)
-- [Pull Request Process](#pull-request-process)
-- [Architecture Guidelines](#architecture-guidelines)
+- [Getting Started](#-getting-started)
+- [Development Workflow](#-development-workflow)
+- [Code Standards](#-code-standards)
+- [Security Guidelines](#-security-guidelines)
+- [Testing Requirements](#-testing-requirements)
+- [Commit Standards](#-commit-standards)
+- [Pull Request Process](#-pull-request-process)
+- [Architecture Guidelines](#-architecture-guidelines)
 
 ## 🚀 **Getting Started**
 

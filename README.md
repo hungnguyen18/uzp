@@ -1,8 +1,24 @@
 # UZP-CLI - User's Zecure Pocket
 [![npm version](https://badge.fury.io/js/uzp-cli.svg)](https://badge.fury.io/js/uzp-cli)
 [![npm downloads](https://img.shields.io/npm/dm/uzp-cli.svg)](https://www.npmjs.com/package/uzp-cli)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/hungnguyen18/uzp-cli)](https://golang.org/)
+[![Security](https://img.shields.io/badge/Security-AES--256--GCM-green.svg)](SECURITY.md)
+[![Contributing](https://img.shields.io/badge/Contributing-Welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 A professional command-line tool for securely storing and managing sensitive information such as API keys, access tokens, and service credentials. All data is encrypted using AES-256-GCM and stored locally.
+
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Commands](#commands)
+- [Security](#security)
+- [Examples](#examples)
+- [Contributing](#contributing)
+- [License](#license)
+- [Support](#support)
 
 ## Features
 
@@ -216,6 +232,12 @@ uzp inject -p myapp-prod > .env.production
 - **Search functionality**: Quickly find secrets across projects
 - **Clipboard integration**: Secure copy with automatic clearing
 
+## Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for detailed guidelines on development practices, security requirements, and submission process.
+
+**Thank you for helping make UZP-CLI more secure! 🔐**
+
 ## License
 
 MIT License
@@ -230,4 +252,17 @@ MIT License
 
 ## Support
 
-For issues, questions, or feature requests, please create an issue on GitHub. 
+### Getting Help
+
+- **🐛 Bug Reports**: [Create an Issue](https://github.com/hungnguyen18/uzp-cli/issues/new)
+- **💡 Feature Requests**: [GitHub Issues](https://github.com/hungnguyen18/uzp-cli/issues)
+- **❓ Questions**: [GitHub Discussions](https://github.com/hungnguyen18/uzp-cli/discussions)
+- **🔒 Security Issues**: [Security Policy](SECURITY.md)
+- **🤝 Contributing**: [Contributing Guide](CONTRIBUTING.md)
+
+### Quick Links
+
+- **📖 Documentation**: This README and [CONTRIBUTING.md](CONTRIBUTING.md)
+- **🔐 Security**: [SECURITY.md](SECURITY.md) for security practices and reporting
+- **📜 License**: [MIT License](LICENSE)
+- **📦 NPM Package**: [uzp-cli on npm](https://www.npmjs.com/package/uzp-cli) 
