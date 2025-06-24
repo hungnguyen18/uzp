@@ -8,6 +8,9 @@ on:
 jobs:
   publish-npm:
     runs-on: ubuntu-latest
+    outputs:
+      npm-published: ${{ steps.npm-publish.outputs.published }}
+      npm-version: ${{ steps.get-version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
       
@@ -16,7 +19,27 @@ jobs:
           node-version: '18'
           registry-url: 'https://registry.npmjs.org'
       
+      - name: Get package version
+        id: get-version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "📦 Package version: $VERSION"
+      
+      - name: Check if version exists on NPM
+        id: check-npm
+        run: |
+          VERSION="${{ steps.get-version.outputs.version }}"
+          if npm view uzp-cli@$VERSION version 2>/dev/null; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "⚠️ Version $VERSION already exists on NPM"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "✅ Version $VERSION does not exist on NPM"
+          fi
+      
       - name: Configure NPM registry
+        if: steps.check-npm.outputs.exists == 'false'
         run: |
           npm config set registry https://registry.npmjs.org/
           npm config set //registry.npmjs.org/:_authToken ${{ secrets.NPM_TOKEN }}
@@ -25,17 +48,37 @@ jobs:
           echo "Auth token configured for: $(npm config get //registry.npmjs.org/:_authToken | cut -c1-10)..."
       
       - name: Install dependencies
+        if: steps.check-npm.outputs.exists == 'false'
         run: npm install --ignore-scripts
       
       - name: Publish to NPM
-        run: npm publish --access public --registry https://registry.npmjs.org
+        id: npm-publish
+        if: steps.check-npm.outputs.exists == 'false'
+        run: |
+          if npm publish --access public --registry https://registry.npmjs.org; then
+            echo "published=true" >> $GITHUB_OUTPUT
+            echo "✅ Successfully published to NPM"
+          else
+            echo "published=false" >> $GITHUB_OUTPUT
+            echo "❌ Failed to publish to NPM"
+            exit 1
+          fi
+      
+      - name: Skip NPM publish
+        if: steps.check-npm.outputs.exists == 'true'
+        run: |
+          echo "published=skipped" >> $GITHUB_OUTPUT
+          echo "⏭️ Skipping NPM publish - version already exists"
 
   publish-github-packages:
     runs-on: ubuntu-latest
-    if: success() || failure()  # Run regardless of NPM job status
+    needs: publish-npm
+    if: always()  # Run regardless of NPM job status
     permissions:
       contents: read
       packages: write
+    outputs:
+      github-published: ${{ steps.github-publish.outputs.published }}
     steps:
       - uses: actions/checkout@v4
       
@@ -45,7 +88,20 @@ jobs:
           registry-url: 'https://npm.pkg.github.com'
           scope: '@hungnguyen18'
       
+      - name: Check if version exists on GitHub Packages
+        id: check-github
+        run: |
+          VERSION="${{ needs.publish-npm.outputs.npm-version }}"
+          if npm view @hungnguyen18/uzp-cli@$VERSION version --registry=https://npm.pkg.github.com 2>/dev/null; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "⚠️ Version $VERSION already exists on GitHub Packages"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "✅ Version $VERSION does not exist on GitHub Packages"
+          fi
+      
       - name: Configure package for GitHub Packages
+        if: steps.check-github.outputs.exists == 'false'
         run: |
           # Backup original package.json
           cp package.json package.json.backup
@@ -55,19 +111,68 @@ jobs:
           mv package.json.tmp package.json
           
           echo "Updated package.json for GitHub Packages:"
-          cat package.json | jq '.name, .publishConfig'
+          cat package.json | jq '.name, .version, .publishConfig'
       
       - name: Install dependencies
+        if: steps.check-github.outputs.exists == 'false'
         run: npm install --ignore-scripts
       
-      - name: Publish to GitHub Packages
-        run: npm publish
+      - name: Publish to GitHub Packages with retry
+        id: github-publish
+        if: steps.check-github.outputs.exists == 'false'
+        run: |
+          MAX_RETRIES=3
+          RETRY_COUNT=0
+          
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            if npm publish; then
+              echo "published=true" >> $GITHUB_OUTPUT
+              echo "✅ Successfully published to GitHub Packages"
+              exit 0
+            else
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+              echo "⚠️ Attempt $RETRY_COUNT failed, retrying..."
+              sleep 10
+            fi
+          done
+          
+          echo "published=false" >> $GITHUB_OUTPUT
+          echo "❌ Failed to publish to GitHub Packages after $MAX_RETRIES attempts"
+          exit 1
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Skip GitHub Packages publish
+        if: steps.check-github.outputs.exists == 'true'
+        run: |
+          echo "published=skipped" >> $GITHUB_OUTPUT
+          echo "⏭️ Skipping GitHub Packages publish - version already exists"
       
       - name: Restore original package.json
         if: always()
         run: |
           if [ -f package.json.backup ]; then
             mv package.json.backup package.json
+          fi
+
+  summary:
+    runs-on: ubuntu-latest
+    needs: [publish-npm, publish-github-packages]
+    if: always()
+    steps:
+      - name: Publication Summary
+        run: |
+          echo "## 📦 Publication Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Registry | Status | Version |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|--------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| NPM | ${{ needs.publish-npm.outputs.npm-published }} | ${{ needs.publish-npm.outputs.npm-version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| GitHub Packages | ${{ needs.publish-github-packages.outputs.github-published }} | ${{ needs.publish-npm.outputs.npm-version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.publish-npm.outputs.npm-published }}" = "true" ]; then
+            echo "✅ **NPM**: https://www.npmjs.com/package/uzp-cli" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ needs.publish-github-packages.outputs.github-published }}" = "true" ]; then
+            echo "✅ **GitHub Packages**: https://github.com/hungnguyen18/uzp-cli/packages" >> $GITHUB_STEP_SUMMARY
           fi 
