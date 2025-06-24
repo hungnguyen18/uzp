@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"syscall"
 
 	"github.com/spf13/cobra"
@@ -52,7 +51,7 @@ var initCmd = &cobra.Command{
 
 		fmt.Println("✅ Vault initialized successfully!")
 		fmt.Println("🔓 Vault is now unlocked and ready to use.")
-		
+
 		// Clear password from memory
 		for i := range password {
 			password[i] = 0
@@ -63,4 +62,4 @@ var initCmd = &cobra.Command{
 
 		return nil
 	},
-} 
+}

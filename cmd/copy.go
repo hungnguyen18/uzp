@@ -3,10 +3,12 @@ package cmd
 import (
 	"fmt"
 	"strings"
+	"syscall"
 	"time"
 
-	"github.com/spf13/cobra"
 	"github.com/hungnguyen/uzp/internal/utils"
+	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 var (
@@ -19,9 +21,23 @@ var copyCmd = &cobra.Command{
 	Long:  `Copy a secret value to clipboard. The value will be automatically cleared after TTL (default 15 seconds).`,
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// Check if vault is unlocked
+		// Check if vault is unlocked, auto-unlock if needed
 		if !vault.IsUnlocked() {
-			return fmt.Errorf("vault is locked. Use 'uzp unlock' first")
+			fmt.Print("Vault is locked. Enter master password: ")
+			password, err := term.ReadPassword(int(syscall.Stdin))
+			if err != nil {
+				return fmt.Errorf("failed to read password: %w", err)
+			}
+			fmt.Println() // New line after password
+
+			if err := vault.Unlock(string(password)); err != nil {
+				return fmt.Errorf("failed to unlock vault: %w", err)
+			}
+
+			// Clear password from memory
+			for i := range password {
+				password[i] = 0
+			}
 		}
 
 		// Parse project/key
@@ -54,4 +70,4 @@ var copyCmd = &cobra.Command{
 
 func init() {
 	copyCmd.Flags().IntVarP(&ttl, "ttl", "t", 15, "Time to live in seconds before clipboard is cleared")
-} 
+}

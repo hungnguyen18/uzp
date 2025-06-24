@@ -13,12 +13,12 @@ import (
 )
 
 const (
-	saltSize   = 32
-	keySize    = 32 // AES-256
-	nonceSize  = 12 // GCM standard nonce size
-	scryptN    = 32768
-	scryptR    = 8
-	scryptP    = 1
+	saltSize  = 32
+	keySize   = 32 // AES-256
+	nonceSize = 12 // GCM standard nonce size
+	scryptN   = 32768
+	scryptR   = 8
+	scryptP   = 1
 )
 
 // DeriveKey derives an encryption key from a password using scrypt
@@ -85,4 +85,10 @@ func Decrypt(ciphertext []byte, key []byte) ([]byte, error) {
 func HashPassword(password string) string {
 	hash := sha256.Sum256([]byte(password))
 	return base64.StdEncoding.EncodeToString(hash[:])
-} 
+}
+
+// HashData creates a SHA-256 hash of arbitrary data
+func HashData(data []byte) string {
+	hash := sha256.Sum256(data)
+	return base64.StdEncoding.EncodeToString(hash[:])
+}

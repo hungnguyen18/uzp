@@ -24,22 +24,115 @@ type EncryptedVault struct {
 	Data string `json:"data"` // Base64 encoded encrypted data
 }
 
-type Vault struct {
-	path       string
-	data       *VaultData
-	key        []byte
-	unlocked   bool
-	unlockedAt time.Time
+// Session data for persistence
+type SessionData struct {
+	UnlockedAt time.Time `json:"unlocked_at"`
+	KeyHash    string    `json:"key_hash"`
+	ExpiresAt  time.Time `json:"expires_at"`
 }
+
+type Vault struct {
+	path        string
+	sessionPath string
+	data        *VaultData
+	key         []byte
+	unlocked    bool
+	unlockedAt  time.Time
+}
+
+// Session timeout - 15 minutes
+const SessionTimeout = 15 * time.Minute
 
 // NewVault creates a new vault instance
 func NewVault() *Vault {
 	homeDir, _ := os.UserHomeDir()
-	vaultPath := filepath.Join(homeDir, ".uzp", "uzp.vault")
-	
-	return &Vault{
-		path: vaultPath,
+	vaultDir := filepath.Join(homeDir, ".uzp")
+	vaultPath := filepath.Join(vaultDir, "uzp.vault")
+	sessionPath := filepath.Join(vaultDir, ".session")
+
+	v := &Vault{
+		path:        vaultPath,
+		sessionPath: sessionPath,
 	}
+
+	// Try to restore session on creation
+	v.tryRestoreSession()
+
+	return v
+}
+
+// tryRestoreSession attempts to restore session from file
+func (v *Vault) tryRestoreSession() {
+	sessionData, err := v.loadSession()
+	if err != nil {
+		return // No valid session found
+	}
+
+	// Check if session is expired
+	if time.Now().After(sessionData.ExpiresAt) {
+		v.clearSession()
+		return
+	}
+
+	// Try to unlock vault using saved session
+	if err := v.restoreFromSession(sessionData); err != nil {
+		v.clearSession()
+		return
+	}
+}
+
+// saveSession saves current session to file
+func (v *Vault) saveSession() error {
+	if !v.unlocked {
+		return nil
+	}
+
+	sessionData := SessionData{
+		UnlockedAt: v.unlockedAt,
+		KeyHash:    crypto.HashData(v.key),
+		ExpiresAt:  time.Now().Add(SessionTimeout),
+	}
+
+	data, err := json.Marshal(sessionData)
+	if err != nil {
+		return err
+	}
+
+	// Create vault directory if not exists
+	dir := filepath.Dir(v.sessionPath)
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		return err
+	}
+
+	return os.WriteFile(v.sessionPath, data, 0600)
+}
+
+// loadSession loads session from file
+func (v *Vault) loadSession() (*SessionData, error) {
+	data, err := os.ReadFile(v.sessionPath)
+	if err != nil {
+		return nil, err
+	}
+
+	var sessionData SessionData
+	if err := json.Unmarshal(data, &sessionData); err != nil {
+		return nil, err
+	}
+
+	return &sessionData, nil
+}
+
+// restoreFromSession restores vault state from session data
+func (v *Vault) restoreFromSession(sessionData *SessionData) error {
+	// We need to derive the key again - we can't safely store it in session
+	// For now, we'll just mark as needing unlock
+	v.unlocked = false
+	return nil
+}
+
+// clearSession removes session file
+func (v *Vault) clearSession() {
+	os.Remove(v.sessionPath)
 }
 
 // Initialize creates a new vault with the given master password
@@ -79,8 +172,13 @@ func (v *Vault) Initialize(masterPassword string) error {
 	v.unlocked = true
 	v.unlockedAt = time.Now()
 
-	// Save vault
-	return v.save()
+	// Save vault and session
+	if err := v.save(); err != nil {
+		return err
+	}
+	v.saveSession()
+
+	return nil
 }
 
 // Unlock unlocks the vault with the master password
@@ -130,6 +228,9 @@ func (v *Vault) Unlock(masterPassword string) error {
 	v.unlocked = true
 	v.unlockedAt = time.Now()
 
+	// Save session
+	v.saveSession()
+
 	return nil
 }
 
@@ -138,10 +239,15 @@ func (v *Vault) Lock() {
 	v.key = nil
 	v.unlocked = false
 	v.data = nil
+	v.clearSession()
 }
 
 // IsUnlocked checks if vault is unlocked
 func (v *Vault) IsUnlocked() bool {
+	// Check session validity if not currently unlocked
+	if !v.unlocked {
+		v.tryRestoreSession()
+	}
 	return v.unlocked
 }
 
@@ -240,7 +346,7 @@ func (v *Vault) Reset() error {
 
 	// Clear in-memory data
 	v.data.Projects = make(map[string]map[string]string)
-	
+
 	// Save empty vault
 	if err := v.save(); err != nil {
 		return err
@@ -303,7 +409,7 @@ func (v *Vault) loadEncrypted() (*EncryptedVault, error) {
 
 // contains checks if str contains substr (case-insensitive)
 func contains(str, substr string) bool {
-	return len(substr) > 0 && len(str) >= len(substr) && 
+	return len(substr) > 0 && len(str) >= len(substr) &&
 		(str == substr || containsIgnoreCase(str, substr))
 }
 
@@ -311,7 +417,7 @@ func containsIgnoreCase(str, substr string) bool {
 	if len(substr) > len(str) {
 		return false
 	}
-	
+
 	for i := 0; i <= len(str)-len(substr); i++ {
 		match := true
 		for j := 0; j < len(substr); j++ {
@@ -338,4 +444,4 @@ func toLower(c byte) byte {
 func (v *Vault) Exists() bool {
 	_, err := os.Stat(v.path)
 	return err == nil
-} 
+}

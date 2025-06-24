@@ -3,8 +3,10 @@ package cmd
 import (
 	"fmt"
 	"sort"
+	"syscall"
 
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 var searchCmd = &cobra.Command{
@@ -13,9 +15,23 @@ var searchCmd = &cobra.Command{
 	Long:  `Search for keys or projects containing the specified keyword (case-insensitive).`,
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// Check if vault is unlocked
+		// Check if vault is unlocked, auto-unlock if needed
 		if !vault.IsUnlocked() {
-			return fmt.Errorf("vault is locked. Use 'uzp unlock' first")
+			fmt.Print("Vault is locked. Enter master password: ")
+			password, err := term.ReadPassword(int(syscall.Stdin))
+			if err != nil {
+				return fmt.Errorf("failed to read password: %w", err)
+			}
+			fmt.Println() // New line after password
+
+			if err := vault.Unlock(string(password)); err != nil {
+				return fmt.Errorf("failed to unlock vault: %w", err)
+			}
+
+			// Clear password from memory
+			for i := range password {
+				password[i] = 0
+			}
 		}
 
 		keyword := args[0]
@@ -42,11 +58,11 @@ var searchCmd = &cobra.Command{
 		// Display results
 		fmt.Printf("🔍 Search results for '%s':\n", keyword)
 		fmt.Println("==========================")
-		
+
 		for _, project := range projectNames {
 			keys := results[project]
 			sort.Strings(keys) // Sort keys for consistent display
-			
+
 			fmt.Printf("\n📁 %s\n", project)
 			for _, key := range keys {
 				fmt.Printf("   🔑 %s\n", key)
@@ -55,4 +71,4 @@ var searchCmd = &cobra.Command{
 
 		return nil
 	},
-} 
+}
