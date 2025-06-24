@@ -49,7 +49,7 @@ User's Zecure Pocket - A secure CLI tool for managing secrets.
 
 ### Installation
 ```bash
-npm install -g uzp
+npm install -g @hungnguyen18/uzp
 ```
 
 ### Quick Start
@@ -89,7 +89,7 @@ npm publish
 
 3. Verify installation:
 ```bash
-npm install -g uzp
+npm install -g @hungnguyen18/uzp
 uzp --help
 ```
 
@@ -120,7 +120,7 @@ uzp init
 ### Test NPM Installation
 ```bash
 # After publishing
-npm install -g uzp
+npm install -g @hungnguyen18/uzp
 uzp --help
 ```
 
@@ -139,7 +139,7 @@ uzp --help
 ## Package Structure
 
 ```
-uzp-1.0.0.tgz
+hungnguyen18-uzp-1.0.0.tgz
 ├── package.json
 ├── README.md
 ├── LICENSE

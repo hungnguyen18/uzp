@@ -19,25 +19,25 @@ A professional command-line tool for securely storing and managing sensitive inf
 ### NPM (Recommended)
 
 ```bash
-npm install -g uzp
+npm install -g @hungnguyen18/uzp
 ```
 
 ### Yarn
 
 ```bash
-yarn global add uzp
+yarn global add @hungnguyen18/uzp
 ```
 
 ### PNPM
 
 ```bash
-pnpm add -g uzp
+pnpm add -g @hungnguyen18/uzp
 ```
 
 ### Bun
 
 ```bash
-bun add -g uzp
+bun add -g @hungnguyen18/uzp
 ```
 
 ### Manual Installation
