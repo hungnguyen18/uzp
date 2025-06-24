@@ -16,22 +16,36 @@ A professional command-line tool for securely storing and managing sensitive inf
 
 ## Installation
 
-### Prerequisites
-
-- Go 1.21 or higher
-
-### Build from source
+### NPM (Recommended)
 
 ```bash
-git clone https://github.com/hungnguyen/uzp.git
-cd uzp
-go build -o uzp
+npm install -g uzp
 ```
 
-### Install globally
+### Yarn
 
 ```bash
-go install .
+yarn global add uzp
+```
+
+### PNPM
+
+```bash
+pnpm add -g uzp
+```
+
+### Bun
+
+```bash
+bun add -g uzp
+```
+
+### Manual Installation
+
+```bash
+git clone https://github.com/hungnguyen18/uzp.git
+cd uzp
+go build -o uzp
 ```
 
 ## Quick Start

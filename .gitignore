@@ -33,4 +33,21 @@ Thumbs.db
 
 # Vault files (for safety)
 *.vault
-.uzp/ 
+.uzp/
+
+# Build directory
+build/
+
+# NPM
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Test files
+.env*
+!.env.example
+
+# Temporary files
+*.tmp
+*.temp 
