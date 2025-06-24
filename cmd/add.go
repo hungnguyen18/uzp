@@ -14,25 +14,54 @@ import (
 var addCmd = &cobra.Command{
 	Use:   "add",
 	Short: "Add a secret to the vault",
-	Long:  `Add a new secret to the vault by specifying project, key, and value.`,
+	Long: `➕ Add New Secret to Vault
+
+Interactively add a new secret to the vault. You'll be prompted for:
+  • Project name (groups related secrets)
+  • Key name (identifier for the secret)
+  • Value (the actual secret, hidden while typing)
+
+ORGANIZATION:
+  Secrets are organized by projects for better management.
+  Example structure:
+    myapp/
+      ├── api_key
+      ├── database_url
+      └── jwt_secret
+
+EXAMPLES:
+  uzp add                           # Interactive mode
+  
+  # Example session:
+  Project name: myapp
+  Key name: api_key  
+  Value (hidden): ****************
+  ✅ Secret added successfully: myapp/api_key
+
+💡 TIPS:
+  • Use descriptive project names (e.g., 'backend', 'frontend', 'aws')
+  • Use clear key names (e.g., 'api_key', 'database_url', 'jwt_secret')
+  • Values are encrypted with AES-256-GCM before storage`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Check if vault is unlocked, auto-unlock if needed
 		if !vault.IsUnlocked() {
-			fmt.Print("Vault is locked. Enter master password: ")
+			fmt.Fprint(os.Stderr, "🔒 Vault is locked. Enter master password: ")
 			password, err := term.ReadPassword(int(syscall.Stdin))
 			if err != nil {
 				return fmt.Errorf("failed to read password: %w", err)
 			}
-			fmt.Println() // New line after password
+			fmt.Fprintln(os.Stderr) // New line after password
 
 			if err := vault.Unlock(string(password)); err != nil {
-				return fmt.Errorf("failed to unlock vault: %w", err)
+				return fmt.Errorf("❌ Invalid master password. Please try again")
 			}
 
 			// Clear password from memory
 			for i := range password {
 				password[i] = 0
 			}
+
+			fmt.Fprintln(os.Stderr, "✅ Vault unlocked successfully!")
 		}
 
 		reader := bufio.NewReader(os.Stdin)
@@ -63,8 +92,28 @@ var addCmd = &cobra.Command{
 		value := string(valueBytes)
 
 		// Validate inputs
-		if project == "" || key == "" || value == "" {
-			return fmt.Errorf("project, key, and value cannot be empty")
+		if project == "" {
+			return fmt.Errorf(`❌ Project name cannot be empty
+
+💡 SUGGESTIONS:
+  • Use descriptive names: 'myapp', 'backend', 'aws'
+  • Group related secrets together
+  • Use lowercase with hyphens: 'my-app', 'web-service'`)
+		}
+
+		if key == "" {
+			return fmt.Errorf(`❌ Key name cannot be empty
+
+💡 SUGGESTIONS:
+  • Use descriptive names: 'api_key', 'database_url'
+  • Use snake_case format: 'jwt_secret', 'oauth_token'
+  • Be specific: 'stripe_api_key' vs 'api_key'`)
+		}
+
+		if value == "" {
+			return fmt.Errorf(`❌ Value cannot be empty
+
+💡 NOTE: The secret value must contain actual data to be stored`)
 		}
 
 		// Add to vault
