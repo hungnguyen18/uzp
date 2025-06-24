@@ -13,11 +13,24 @@ import (
 var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all projects and keys",
-	Long:  `Display a list of all projects and their associated keys in the vault.`,
+	Long: `List Secrets
+
+Display all projects and their keys in the vault.
+
+EXAMPLES:
+  uzp list
+
+OUTPUT FORMAT:
+  project1:
+    key1
+    key2
+  
+  project2:
+    key3`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Check if vault is unlocked, auto-unlock if needed
 		if !vault.IsUnlocked() {
-			fmt.Fprint(os.Stderr, "Vault is locked. Enter master password: ")
+			fmt.Fprint(os.Stderr, "Enter master password: ")
 			password, err := term.ReadPassword(int(syscall.Stdin))
 			if err != nil {
 				return fmt.Errorf("failed to read password: %w", err)
@@ -25,7 +38,7 @@ var listCmd = &cobra.Command{
 			fmt.Fprintln(os.Stderr) // New line after password
 
 			if err := vault.Unlock(string(password)); err != nil {
-				return fmt.Errorf("failed to unlock vault: %w", err)
+				return fmt.Errorf("invalid password")
 			}
 
 			// Clear password from memory
@@ -42,7 +55,7 @@ var listCmd = &cobra.Command{
 
 		// Check if vault is empty
 		if len(projects) == 0 {
-			fmt.Println("📭 Vault is empty. Use 'uzp add' to add secrets.")
+			fmt.Println("No secrets found.")
 			return nil
 		}
 
@@ -54,17 +67,15 @@ var listCmd = &cobra.Command{
 		sort.Strings(projectNames)
 
 		// Display projects and keys
-		fmt.Println("🔐 Vault Contents:")
-		fmt.Println("==================")
-
 		for _, project := range projectNames {
 			keys := projects[project]
 			sort.Strings(keys) // Sort keys for consistent display
 
-			fmt.Printf("\n📁 %s\n", project)
+			fmt.Printf("%s:\n", project)
 			for _, key := range keys {
-				fmt.Printf("   🔑 %s\n", key)
+				fmt.Printf("  %s\n", key)
 			}
+			fmt.Println()
 		}
 
 		return nil

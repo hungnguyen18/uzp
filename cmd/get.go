@@ -13,59 +13,33 @@ import (
 var getCmd = &cobra.Command{
 	Use:   "get <project/key>",
 	Short: "Get a secret value from the vault",
-	Long: `🔍 Retrieve Secret Value
+	Long: `Get Secret
 
-Get a secret value from the vault by specifying the project and key.
-The value will be printed to stdout (use copy command for clipboard).
+Retrieve a secret value from the vault and print to stdout.
 
 FORMAT:
-  project/key (e.g., myapp/api_key)
-
-EXAMPLES:
-  uzp get myapp/api_key              # Get API key for myapp
-  uzp get backend/database_url       # Get database URL
-  uzp get auth/jwt_secret            # Get JWT secret
-  
-💡 TIPS:
-  • Use 'uzp list' to see all available secrets
-  • Use 'uzp copy project/key' to copy to clipboard
-  • Use 'uzp search keyword' to find specific secrets`,
-	Args: cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		// Validate arguments FIRST before prompting for password
-		if len(args) == 0 {
-			return fmt.Errorf(`❌ Missing secret path
-
-USAGE:
-  uzp get <project/key>
+  project/key
 
 EXAMPLES:
   uzp get myapp/api_key
   uzp get backend/database_url
-
-💡 TIP: Use 'uzp list' to see all available secrets`)
+  uzp get auth/jwt_secret`,
+	Args: cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		// Validate arguments FIRST before prompting for password
+		if len(args) == 0 {
+			return fmt.Errorf("usage: uzp get <project/key>")
 		}
 
 		// Parse project/key
 		parts := strings.Split(args[0], "/")
 		if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
-			return fmt.Errorf(`❌ Invalid format: '%s'
-
-REQUIRED FORMAT:
-  project/key
-
-EXAMPLES:
-  uzp get myapp/api_key           ✅ Valid
-  uzp get backend/database_url    ✅ Valid
-  uzp get myapp                   ❌ Missing key
-  uzp get /api_key                ❌ Missing project
-
-💡 TIP: Use 'uzp list' to see all available secrets`, args[0])
+			return fmt.Errorf("invalid format. use: project/key")
 		}
 
 		// Check if vault is unlocked, auto-unlock if needed
 		if !vault.IsUnlocked() {
-			fmt.Fprint(os.Stderr, "🔒 Vault is locked. Enter master password: ")
+			fmt.Fprint(os.Stderr, "Enter master password: ")
 			password, err := term.ReadPassword(int(syscall.Stdin))
 			if err != nil {
 				return fmt.Errorf("failed to read password: %w", err)
@@ -73,7 +47,7 @@ EXAMPLES:
 			fmt.Fprintln(os.Stderr) // New line after password
 
 			if err := vault.Unlock(string(password)); err != nil {
-				return fmt.Errorf("❌ Invalid master password. Please try again")
+				return fmt.Errorf("invalid password")
 			}
 
 			// Clear password from memory
@@ -88,17 +62,7 @@ EXAMPLES:
 		// Get value
 		value, err := vault.Get(project, key)
 		if err != nil {
-			return fmt.Errorf(`❌ Secret not found: %s/%s
-
-💡 SUGGESTIONS:
-  • Check spelling: uzp list (shows all secrets)
-  • Search similar: uzp search %s
-  • Add secret: uzp add
-
-Available commands:
-  uzp list                    # Show all secrets
-  uzp search %s               # Search for '%s'
-  uzp add                     # Add new secret`, project, key, key, key, key)
+			return fmt.Errorf("secret not found: %s/%s", project, key)
 		}
 
 		// Print value

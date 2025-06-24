@@ -11,11 +11,24 @@ import (
 var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Initialize a new vault",
-	Long:  `Initialize a new vault with a master password. This command creates an encrypted vault file.`,
+	Long: `Initialize Vault
+
+Create a new vault with a master password.
+
+EXAMPLES:
+  uzp init
+
+WORKFLOW:
+  1. Enter master password (minimum 8 characters)
+  2. Confirm password
+  3. Vault is created and ready to use
+
+STORAGE:
+  Creates ~/.uzp/uzp.vault (encrypted)`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Check if vault already exists
 		if vault.Exists() {
-			return fmt.Errorf("vault already exists. Use 'uzp unlock' to access it")
+			return fmt.Errorf("vault already exists")
 		}
 
 		// Prompt for master password
@@ -49,8 +62,8 @@ var initCmd = &cobra.Command{
 			return fmt.Errorf("failed to initialize vault: %w", err)
 		}
 
-		fmt.Println("✅ Vault initialized successfully!")
-		fmt.Println("🔓 Vault is now unlocked and ready to use.")
+		fmt.Println("Vault initialized successfully!")
+		fmt.Println("Vault is ready to use.")
 
 		// Clear password from memory
 		for i := range password {

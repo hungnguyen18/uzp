@@ -19,12 +19,24 @@ var (
 var copyCmd = &cobra.Command{
 	Use:   "copy <project/key>",
 	Short: "Copy a secret value to clipboard",
-	Long:  `Copy a secret value to clipboard. The value will be automatically cleared after TTL (default 15 seconds).`,
-	Args:  cobra.ExactArgs(1),
+	Long: `Copy Secret
+
+Copy a secret value to clipboard with automatic clearing.
+
+FORMAT:
+  project/key
+
+EXAMPLES:
+  uzp copy myapp/api_key
+  uzp copy backend/database_url
+
+OPTIONS:
+  --ttl  Seconds before clipboard is cleared (default: 15)`,
+	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Check if vault is unlocked, auto-unlock if needed
 		if !vault.IsUnlocked() {
-			fmt.Fprint(os.Stderr, "Vault is locked. Enter master password: ")
+			fmt.Fprint(os.Stderr, "Enter master password: ")
 			password, err := term.ReadPassword(int(syscall.Stdin))
 			if err != nil {
 				return fmt.Errorf("failed to read password: %w", err)
@@ -32,7 +44,7 @@ var copyCmd = &cobra.Command{
 			fmt.Fprintln(os.Stderr) // New line after password
 
 			if err := vault.Unlock(string(password)); err != nil {
-				return fmt.Errorf("failed to unlock vault: %w", err)
+				return fmt.Errorf("invalid password")
 			}
 
 			// Clear password from memory
@@ -62,8 +74,8 @@ var copyCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Printf("✅ Copied %s/%s to clipboard.\n", project, key)
-		fmt.Printf("📋 Clipboard will be cleared in %d seconds.\n", ttl)
+		fmt.Printf("Copied %s/%s to clipboard.\n", project, key)
+		fmt.Printf("Clipboard will be cleared in %d seconds.\n", ttl)
 
 		return nil
 	},

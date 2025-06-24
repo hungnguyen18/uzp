@@ -14,38 +14,33 @@ import (
 var addCmd = &cobra.Command{
 	Use:   "add",
 	Short: "Add a secret to the vault",
-	Long: `➕ Add New Secret to Vault
+	Long: `Add Secret
 
-Interactively add a new secret to the vault. You'll be prompted for:
-  • Project name (groups related secrets)
-  • Key name (identifier for the secret)
-  • Value (the actual secret, hidden while typing)
+Interactively add a new secret or update an existing one.
+
+WORKFLOW:
+  1. Enter project name (groups related secrets)
+  2. Enter key name (identifier for the secret)  
+  3. Enter value (hidden while typing)
+  4. If key exists, confirm update
 
 ORGANIZATION:
-  Secrets are organized by projects for better management.
-  Example structure:
-    myapp/
-      ├── api_key
-      ├── database_url
-      └── jwt_secret
+  Secrets are organized by projects:
+    myapp/api_key
+    myapp/database_url
+    backend/jwt_secret
 
 EXAMPLES:
-  uzp add                           # Interactive mode
-  
-  # Example session:
-  Project name: myapp
-  Key name: api_key  
-  Value (hidden): ****************
-  ✅ Secret added successfully: myapp/api_key
+  uzp add                 Interactive mode
 
-💡 TIPS:
-  • Use descriptive project names (e.g., 'backend', 'frontend', 'aws')
-  • Use clear key names (e.g., 'api_key', 'database_url', 'jwt_secret')
-  • Values are encrypted with AES-256-GCM before storage`,
+  Project name: myapp
+  Key name: api_key
+  Value (hidden): 
+  Added: myapp/api_key`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Check if vault is unlocked, auto-unlock if needed
 		if !vault.IsUnlocked() {
-			fmt.Fprint(os.Stderr, "🔒 Vault is locked. Enter master password: ")
+			fmt.Fprint(os.Stderr, "Enter master password: ")
 			password, err := term.ReadPassword(int(syscall.Stdin))
 			if err != nil {
 				return fmt.Errorf("failed to read password: %w", err)
@@ -53,15 +48,13 @@ EXAMPLES:
 			fmt.Fprintln(os.Stderr) // New line after password
 
 			if err := vault.Unlock(string(password)); err != nil {
-				return fmt.Errorf("❌ Invalid master password. Please try again")
+				return fmt.Errorf("invalid password")
 			}
 
 			// Clear password from memory
 			for i := range password {
 				password[i] = 0
 			}
-
-			fmt.Fprintln(os.Stderr, "✅ Vault unlocked successfully!")
 		}
 
 		reader := bufio.NewReader(os.Stdin)
@@ -93,35 +86,50 @@ EXAMPLES:
 
 		// Validate inputs
 		if project == "" {
-			return fmt.Errorf(`❌ Project name cannot be empty
-
-💡 SUGGESTIONS:
-  • Use descriptive names: 'myapp', 'backend', 'aws'
-  • Group related secrets together
-  • Use lowercase with hyphens: 'my-app', 'web-service'`)
+			return fmt.Errorf("Project name cannot be empty")
 		}
 
 		if key == "" {
-			return fmt.Errorf(`❌ Key name cannot be empty
-
-💡 SUGGESTIONS:
-  • Use descriptive names: 'api_key', 'database_url'
-  • Use snake_case format: 'jwt_secret', 'oauth_token'
-  • Be specific: 'stripe_api_key' vs 'api_key'`)
+			return fmt.Errorf("Key name cannot be empty")
 		}
 
 		if value == "" {
-			return fmt.Errorf(`❌ Value cannot be empty
-
-💡 NOTE: The secret value must contain actual data to be stored`)
+			return fmt.Errorf("Value cannot be empty")
 		}
 
-		// Add to vault
+		// Check if key already exists
+		existingValue, err := vault.Get(project, key)
+		isUpdate := err == nil && existingValue != ""
+
+		if isUpdate {
+			fmt.Printf("Secret '%s/%s' already exists.\n", project, key)
+			fmt.Print("Update? (y/N): ")
+
+			response, err := reader.ReadString('\n')
+			if err != nil {
+				return fmt.Errorf("failed to read confirmation: %w", err)
+			}
+
+			response = strings.TrimSpace(strings.ToLower(response))
+			if response != "y" && response != "yes" {
+				fmt.Println("Cancelled.")
+				return nil
+			}
+		}
+
+		// Add/Update to vault
 		if err := vault.Add(project, key, value); err != nil {
+			if isUpdate {
+				return fmt.Errorf("failed to update secret: %w", err)
+			}
 			return fmt.Errorf("failed to add secret: %w", err)
 		}
 
-		fmt.Printf("✅ Secret added successfully: %s/%s\n", project, key)
+		if isUpdate {
+			fmt.Printf("Updated: %s/%s\n", project, key)
+		} else {
+			fmt.Printf("Added: %s/%s\n", project, key)
+		}
 
 		// Clear sensitive data from memory
 		for i := range valueBytes {
