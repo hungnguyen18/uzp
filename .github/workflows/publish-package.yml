@@ -16,16 +16,24 @@ jobs:
           node-version: '18'
           registry-url: 'https://registry.npmjs.org'
       
+      - name: Debug environment
+        run: |
+          echo "NODE_AUTH_TOKEN length: ${#NODE_AUTH_TOKEN}"
+          echo "Registry: $NPM_CONFIG_REGISTRY"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      
       - name: Install dependencies
         run: npm install --ignore-scripts
       
       - name: Publish to NPM
-        run: npm publish
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   publish-github-packages:
     runs-on: ubuntu-latest
+    if: success() || failure()  # Run regardless of NPM job status
     permissions:
       contents: read
       packages: write
@@ -36,24 +44,19 @@ jobs:
         with:
           node-version: '18'
           registry-url: 'https://npm.pkg.github.com'
+          scope: '@hungnguyen18'
       
       - name: Configure package for GitHub Packages
         run: |
-          # Create a temporary package.json for GitHub Packages
+          # Backup original package.json
           cp package.json package.json.backup
           
-          # Update package name to scoped for GitHub Packages
-          sed -i 's/"name": "uzp-cli"/"name": "@hungnguyen18\/uzp-cli"/' package.json
+          # Update package name to scoped version
+          jq '.name = "@hungnguyen18/uzp-cli" | .publishConfig = {"registry": "https://npm.pkg.github.com"}' package.json > package.json.tmp
+          mv package.json.tmp package.json
           
-          # Add publishConfig for GitHub Packages
-          node -e "
-          const pkg = require('./package.json');
-          pkg.publishConfig = { registry: 'https://npm.pkg.github.com' };
-          require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));
-          "
-          
-          echo "Updated package.json:"
-          cat package.json
+          echo "Updated package.json for GitHub Packages:"
+          cat package.json | jq '.name, .publishConfig'
       
       - name: Install dependencies
         run: npm install --ignore-scripts
@@ -64,4 +67,8 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Restore original package.json
-        run: mv package.json.backup package.json 
+        if: always()
+        run: |
+          if [ -f package.json.backup ]; then
+            mv package.json.backup package.json
+          fi 
