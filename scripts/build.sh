@@ -32,7 +32,7 @@ for PLATFORM in "${PLATFORMS[@]}"; do
   
   echo "📦 Building $OUTPUT_NAME..."
   
-  env GOOS=$GOOS GOARCH=$GOARCH go build -ldflags="-s -w" -o "$BUILD_DIR/$OUTPUT_NAME" .
+  env GOOS=$GOOS GOARCH=$GOARCH go build -ldflags="-s -w -X main.version=$VERSION" -trimpath -o "$BUILD_DIR/$OUTPUT_NAME" .
   
   echo "✅ Built $OUTPUT_NAME"
 done
