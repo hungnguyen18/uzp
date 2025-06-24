@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/hungnguyen/uzp/internal/storage"
+	"github.com/hungnguyen18/uzp-cli/internal/storage"
 	"github.com/spf13/cobra"
 )
 

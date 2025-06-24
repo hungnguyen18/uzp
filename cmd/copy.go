@@ -7,7 +7,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/hungnguyen/uzp/internal/utils"
+	"github.com/hungnguyen18/uzp-cli/internal/utils"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )

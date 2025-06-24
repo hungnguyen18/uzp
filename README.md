@@ -19,27 +19,27 @@ A professional command-line tool for securely storing and managing sensitive inf
 ### NPM
 
 ```bash
-npm install -g @hungnguyen18/uzp
+npm install -g uzp-cli
 ```
 
 ### Other Package Managers
 
 ```bash
 # Yarn
-yarn global add @hungnguyen18/uzp
+yarn global add uzp-cli
 
 # PNPM  
-pnpm add -g @hungnguyen18/uzp
+pnpm add -g uzp-cli
 
 # Bun
-bun add -g @hungnguyen18/uzp
+bun add -g uzp-cli
 ```
 
 ### Manual Installation
 
 ```bash
-git clone https://github.com/hungnguyen18/uzp.git
-cd uzp
+git clone https://github.com/hungnguyen18/uzp-cli.git
+cd uzp-cli
 go build -o uzp
 ```
 

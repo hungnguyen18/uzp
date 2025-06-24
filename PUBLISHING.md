@@ -4,7 +4,7 @@
 
 ### 1. GitHub Repository Setup
 
-1. Create GitHub repository: `https://github.com/hungnguyen18/uzp`
+1. Create GitHub repository: `https://github.com/hungnguyen18/uzp-cli`
 2. Push code to GitHub:
 ```bash
 git add .
@@ -30,7 +30,7 @@ git tag v1.0.0
 git push origin v1.0.0
 ```
 
-2. Go to GitHub releases: `https://github.com/hungnguyen18/uzp/releases`
+2. Go to GitHub releases: `https://github.com/hungnguyen18/uzp-cli/releases`
 3. Click "Create a new release"
 4. Select tag: `v1.0.0`
 5. Release title: `UZP v1.0.0 - User's Zecure Pocket`
@@ -49,7 +49,7 @@ User's Zecure Pocket - A secure CLI tool for managing secrets.
 
 ### Installation
 ```bash
-npm install -g @hungnguyen18/uzp
+npm install -g uzp-cli
 ```
 
 ### Quick Start
@@ -89,7 +89,7 @@ npm publish
 
 3. Verify installation:
 ```bash
-npm install -g @hungnguyen18/uzp
+npm install -g uzp-cli
 uzp --help
 ```
 
@@ -120,7 +120,7 @@ uzp init
 ### Test NPM Installation
 ```bash
 # After publishing
-npm install -g @hungnguyen18/uzp
+npm install -g uzp-cli
 uzp --help
 ```
 
@@ -139,7 +139,7 @@ uzp --help
 ## Package Structure
 
 ```
-hungnguyen18-uzp-1.0.0.tgz
+uzp-cli-1.0.0.tgz
 ├── package.json
 ├── README.md
 ├── LICENSE
