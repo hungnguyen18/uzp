@@ -8,7 +8,7 @@ const { execSync } = require('child_process');
 
 const BINARY_NAME = 'uzp';
 const BINARY_PATH = path.join(__dirname, '..', 'bin', BINARY_NAME);
-const GITHUB_RELEASES_URL = 'https://api.github.com/repos/hungnguyen18/uzp/releases/latest';
+const GITHUB_RELEASES_URL = 'https://api.github.com/repos/hungnguyen18/uzp-cli/releases/latest';
 
 // Cache directory in user's home
 const CACHE_DIR = path.join(os.homedir(), '.uzp-cache');
@@ -233,13 +233,13 @@ async function install() {
     if (error.message.includes('No GitHub releases found') || error.message.includes('No release assets found')) {
       console.log('📋 This package requires a GitHub release with pre-built binaries.');
       console.log('   The maintainer needs to create a release at:');
-      console.log('   https://github.com/hungnguyen18/uzp/releases');
+      console.log('   https://github.com/hungnguyen18/uzp-cli/releases');
       console.log('');
     }
     
     console.log('🔧 Manual installation:');
-    console.log('   git clone https://github.com/hungnguyen18/uzp.git');
-    console.log('   cd uzp');
+         console.log('   git clone https://github.com/hungnguyen18/uzp-cli.git');
+     console.log('   cd uzp-cli');
     console.log('   go build -o uzp');
     console.log('   sudo mv uzp /usr/local/bin/  # Optional: make globally available');
     process.exit(1);

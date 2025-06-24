@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/hungnguyen/uzp/cmd"
+	"github.com/hungnguyen18/uzp-cli/cmd"
 )
 
 func main() {
@@ -12,4 +12,4 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
-} 
+}

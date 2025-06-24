@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/hungnguyen/uzp/internal/crypto"
+	"github.com/hungnguyen18/uzp-cli/internal/crypto"
 )
 
 type VaultData struct {

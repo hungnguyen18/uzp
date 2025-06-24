@@ -1,4 +1,4 @@
-module github.com/hungnguyen/uzp
+module github.com/hungnguyen18/uzp-cli
 
 go 1.21
 

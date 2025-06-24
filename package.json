@@ -1,6 +1,6 @@
 {
-  "name": "@hungnguyen18/uzp",
-  "version": "1.0.2",
+  "name": "uzp-cli",
+  "version": "1.0.3",
   "description": "User's Zecure Pocket - A secure CLI tool for managing secrets",
   "keywords": [
     "cli",
@@ -15,14 +15,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hungnguyen18/uzp.git"
+    "url": "git+https://github.com/hungnguyen18/uzp-cli.git"
   },
-  "publishConfig": {
-    "@hungnguyen18:registry": "https://npm.pkg.github.com"
-  },
-  "homepage": "https://github.com/hungnguyen18/uzp#readme",
+
+  "homepage": "https://github.com/hungnguyen18/uzp-cli#readme",
   "bugs": {
-    "url": "https://github.com/hungnguyen18/uzp/issues"
+    "url": "https://github.com/hungnguyen18/uzp-cli/issues"
   },
   "bin": {
     "uzp": "bin/uzp"
@@ -39,7 +37,7 @@
     "build": "./scripts/build.sh",
     "build-release": "./scripts/build.sh $npm_package_version",
     "pack-test": "npm pack",
-    "test-install": "npm install -g ./uzp-$npm_package_version.tgz"
+    "test-install": "npm install -g ./uzp-cli-$npm_package_version.tgz"
   },
   "engines": {
     "node": ">=12.0.0"
