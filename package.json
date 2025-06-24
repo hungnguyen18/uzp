@@ -15,7 +15,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/hungnguyen18/uzp.git"
+    "url": "git+https://github.com/hungnguyen18/uzp.git"
+  },
+  "publishConfig": {
+    "@hungnguyen18:registry": "https://npm.pkg.github.com"
   },
   "homepage": "https://github.com/hungnguyen18/uzp#readme",
   "bugs": {

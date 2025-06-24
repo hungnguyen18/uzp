@@ -16,27 +16,32 @@ A professional command-line tool for securely storing and managing sensitive inf
 
 ## Installation
 
-### NPM (Recommended)
+### From NPM Registry (Recommended)
 
 ```bash
 npm install -g @hungnguyen18/uzp
 ```
 
-### Yarn
+### From GitHub Packages
 
 ```bash
+# Configure npm for GitHub Packages
+echo "@hungnguyen18:registry=https://npm.pkg.github.com" >> ~/.npmrc
+
+# Install from GitHub Packages  
+npm install -g @hungnguyen18/uzp
+```
+
+### Other Package Managers
+
+```bash
+# Yarn
 yarn global add @hungnguyen18/uzp
-```
 
-### PNPM
-
-```bash
+# PNPM  
 pnpm add -g @hungnguyen18/uzp
-```
 
-### Bun
-
-```bash
+# Bun
 bun add -g @hungnguyen18/uzp
 ```
 
