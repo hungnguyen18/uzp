@@ -1,4 +1,4 @@
-# UZP - Secure Secrets Manager
+# UZP - User's Zecure Pocket
 
 A professional command-line tool for securely storing and managing sensitive information such as API keys, access tokens, and service credentials. All data is encrypted using AES-256-GCM and stored locally.
 
@@ -177,44 +177,9 @@ uzp inject -p myapp > .env.local
 uzp inject -p myapp-prod > .env.production
 ```
 
-## Development
 
-### Project Structure
-
-```
-uzp/
-├── cmd/               # CLI commands
-│   ├── root.go        # Main command and help
-│   ├── init.go        # Initialize vault
-│   ├── add.go         # Add secrets
-│   ├── get.go         # Get secrets
-│   ├── update.go      # Update secrets
-│   ├── list.go        # List secrets
-│   ├── search.go      # Search secrets
-│   ├── copy.go        # Copy to clipboard
-│   ├── inject.go      # Export .env files
-│   └── reset.go       # Reset vault
-├── internal/
-│   ├── crypto/        # AES-256-GCM encryption
-│   ├── storage/       # Vault management
-│   └── utils/         # Clipboard utilities
-├── main.go
-└── go.mod
-```
-
-### Building
-
-```bash
-go build -o uzp
-```
 
 ## Key Features
-
-### Professional UX
-- **Clean interface**: No emojis or excessive formatting
-- **Consistent commands**: All commands follow the same pattern
-- **Helpful error messages**: Clear guidance when something goes wrong
-- **Auto-unlock**: No session management - just run commands when needed
 
 ### Security Best Practices
 - **AES-256-GCM encryption**: Industry-standard encryption
@@ -228,10 +193,6 @@ go build -o uzp
 - **Project-based organization**: Group secrets by application/service
 - **Search functionality**: Quickly find secrets across projects
 - **Clipboard integration**: Secure copy with automatic clearing
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
