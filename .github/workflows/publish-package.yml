@@ -16,20 +16,19 @@ jobs:
           node-version: '18'
           registry-url: 'https://registry.npmjs.org'
       
-      - name: Debug environment
+      - name: Configure NPM registry
         run: |
-          echo "NODE_AUTH_TOKEN length: ${#NODE_AUTH_TOKEN}"
-          echo "Registry: $NPM_CONFIG_REGISTRY"
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          npm config set registry https://registry.npmjs.org/
+          npm config set //registry.npmjs.org/:_authToken ${{ secrets.NPM_TOKEN }}
+          echo "Registry configured:"
+          npm config get registry
+          echo "Auth token configured for: $(npm config get //registry.npmjs.org/:_authToken | cut -c1-10)..."
       
       - name: Install dependencies
         run: npm install --ignore-scripts
       
       - name: Publish to NPM
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public --registry https://registry.npmjs.org
 
   publish-github-packages:
     runs-on: ubuntu-latest
