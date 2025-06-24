@@ -1,4 +1,6 @@
 # UZP-CLI - User's Zecure Pocket
+[![npm version](https://badge.fury.io/js/uzp-cli.svg)](https://badge.fury.io/js/uzp-cli)
+[![npm downloads](https://img.shields.io/npm/dm/uzp-cli.svg)](https://www.npmjs.com/package/uzp-cli)
 
 A professional command-line tool for securely storing and managing sensitive information such as API keys, access tokens, and service credentials. All data is encrypted using AES-256-GCM and stored locally.
 
@@ -12,7 +14,6 @@ A professional command-line tool for securely storing and managing sensitive inf
 - 📁 **Project-based organization** of secrets
 - 📄 **Environment file export** (.env generation)
 - 🌍 **Cross-platform support** (macOS, Linux, Windows)
-- ⚡ **Professional UX** with clean, consistent interface
 
 ## Installation
 
@@ -21,9 +22,6 @@ A professional command-line tool for securely storing and managing sensitive inf
 ```bash
 npm install -g uzp-cli
 ```
-
-[![npm version](https://badge.fury.io/js/uzp-cli.svg)](https://badge.fury.io/js/uzp-cli)
-[![npm downloads](https://img.shields.io/npm/dm/uzp-cli.svg)](https://www.npmjs.com/package/uzp-cli)
 
 ### Other Package Managers
 
