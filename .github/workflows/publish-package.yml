@@ -16,8 +16,16 @@ jobs:
           node-version: '18'
           registry-url: https://registry.npmjs.org/
       
+      - name: Create .npmrc
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+          echo "registry=https://registry.npmjs.org/" >> ~/.npmrc
+      
       - name: Install dependencies
         run: npm install --ignore-scripts
+      
+      - name: Verify authentication
+        run: npm whoami
       
       - name: Publish to NPM
         run: npm publish
@@ -36,7 +44,11 @@ jobs:
         with:
           node-version: '18'
           registry-url: https://npm.pkg.github.com/
-          scope: '@hungnguyen18'
+      
+      - name: Create .npmrc for GitHub Packages
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" > ~/.npmrc
+          echo "@hungnguyen18:registry=https://npm.pkg.github.com/" >> ~/.npmrc
       
       - name: Configure package for GitHub Packages
         run: |
@@ -52,6 +64,8 @@ jobs:
           pkg.publishConfig = { registry: 'https://npm.pkg.github.com' };
           require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));
           "
+          
+          cat package.json
       
       - name: Install dependencies
         run: npm install --ignore-scripts
