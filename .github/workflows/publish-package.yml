@@ -14,23 +14,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
-          registry-url: https://registry.npmjs.org/
-      
-      - name: Create .npmrc
-        run: |
-          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
-          echo "registry=https://registry.npmjs.org/" >> ~/.npmrc
+          registry-url: 'https://registry.npmjs.org'
       
       - name: Install dependencies
         run: npm install --ignore-scripts
       
-      - name: Verify authentication
-        run: npm whoami
-      
       - name: Publish to NPM
         run: npm publish
         env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   publish-github-packages:
     runs-on: ubuntu-latest
@@ -43,12 +35,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
-          registry-url: https://npm.pkg.github.com/
-      
-      - name: Create .npmrc for GitHub Packages
-        run: |
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" > ~/.npmrc
-          echo "@hungnguyen18:registry=https://npm.pkg.github.com/" >> ~/.npmrc
+          registry-url: 'https://npm.pkg.github.com'
       
       - name: Configure package for GitHub Packages
         run: |
@@ -65,6 +52,7 @@ jobs:
           require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));
           "
           
+          echo "Updated package.json:"
           cat package.json
       
       - name: Install dependencies
@@ -73,7 +61,7 @@ jobs:
       - name: Publish to GitHub Packages
         run: npm publish
         env:
-          NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Restore original package.json
         run: mv package.json.backup package.json 
