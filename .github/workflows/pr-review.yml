@@ -31,13 +31,14 @@ jobs:
           echo "pr_title=$PR_TITLE" >> $GITHUB_OUTPUT
           echo "pr_author=${{ github.event.pull_request.user.login }}" >> $GITHUB_OUTPUT
           echo "base_ref=${{ github.event.pull_request.base.ref }}" >> $GITHUB_OUTPUT
-          echo "head_ref=${{ github.event.pull_request.head.ref }}" >> $GITHUB_OUTPUT
+          export HEAD_REF="${{ github.event.pull_request.head.ref }}"
+          echo "head_ref=$HEAD_REF" >> $GITHUB_OUTPUT
       
       - name: Analyze PR Changes
         id: analyze-changes
         run: |
           # Get list of changed files
-          git diff --name-only origin/${{ steps.pr-info.outputs.base_ref }}...HEAD > changed_files.txt
+          git diff --name-only origin/${{ steps.pr-info.outputs.base_ref }}...$HEAD_REF > changed_files.txt
           
           # Categorize changes
           security_files=$(grep -E "(crypto|security|vault|storage)" changed_files.txt || echo "")
