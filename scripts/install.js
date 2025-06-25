@@ -13,7 +13,7 @@ const GITHUB_RELEASES_URL = 'https://api.github.com/repos/hungnguyen18/uzp-cli/r
 // Cache directory in user's home
 const CACHE_DIR = path.join(os.homedir(), '.uzp-cache');
 const VERSION_FILE = path.join(CACHE_DIR, 'version.txt');
-const LOCK_FILE = path.join(CACHE_DIR, 'install.lock');
+
 
 function ensureCacheDir() {
   if (!fs.existsSync(CACHE_DIR)) {
@@ -28,48 +28,7 @@ function ensureBinDir() {
   }
 }
 
-function checkDiskSpace(sizeBytes) {
-  try {
-    const stats = fs.statSync(path.dirname(BINARY_PATH));
-    // Note: This is a basic check, disk space detection can be complex
-    // For now, we'll just ensure the directory is writable
-    const testFile = path.join(path.dirname(BINARY_PATH), '.write-test');
-    fs.writeFileSync(testFile, 'test');
-    fs.unlinkSync(testFile);
-    return true;
-  } catch (error) {
-    throw new Error(`Insufficient disk space or permission denied: ${error.message}`);
-  }
-}
 
-function acquireLock() {
-  ensureCacheDir();
-  
-  if (fs.existsSync(LOCK_FILE)) {
-    const lockData = fs.readFileSync(LOCK_FILE, 'utf8');
-    const lockTime = parseInt(lockData, 10);
-    const currentTime = Date.now();
-    
-    // If lock is older than 5 minutes, consider it stale and remove it
-    if (currentTime - lockTime > 5 * 60 * 1000) {
-      fs.unlinkSync(LOCK_FILE);
-    } else {
-      throw new Error('Another installation is in progress. Please wait and try again.');
-    }
-  }
-  
-  fs.writeFileSync(LOCK_FILE, Date.now().toString(), 'utf8');
-}
-
-function releaseLock() {
-  try {
-    if (fs.existsSync(LOCK_FILE)) {
-      fs.unlinkSync(LOCK_FILE);
-    }
-  } catch (error) {
-    // Ignore lock release errors
-  }
-}
 
 function getCachedBinaryPath(binaryName, version) {
   return path.join(CACHE_DIR, `${binaryName}-${version}`);
@@ -138,7 +97,7 @@ function downloadFile(url, dest) {
     };
     
     const request = https.get(url, {
-      timeout: 60000  // 60 second timeout for download
+      timeout: 30000  // 30 second timeout for download
     }, (response) => {
       if (response.statusCode === 302 || response.statusCode === 301) {
         file.destroy();
@@ -248,7 +207,7 @@ async function getSpecificRelease(version) {
       headers: {
         'User-Agent': 'uzp-npm-installer'
       },
-      timeout: 30000  // 30 second timeout
+      timeout: 15000  // 15 second timeout
     }, (response) => {
       let data = '';
       
@@ -296,7 +255,7 @@ async function getLatestRelease() {
       headers: {
         'User-Agent': 'uzp-npm-installer'
       },
-      timeout: 30000  // 30 second timeout
+      timeout: 15000  // 15 second timeout
     }, (response) => {
       let data = '';
       
@@ -391,9 +350,6 @@ function suggestReinstall() {
 
 async function install() {
   try {
-    // Acquire installation lock to prevent concurrent installations
-    acquireLock();
-    
     console.log('📦 Installing UZP...');
     
     const binaryName = getBinaryName();
@@ -474,7 +430,6 @@ async function install() {
         console.log('💡 To force reinstall: npx uzp-reinstall');
         console.log('💡 To install specific version: npm install -g uzp-cli@1.0.6');
         console.log('🚀 Ready to use: uzp --help');
-        releaseLock();
         return;
       } else {
         // Latest requested and different version - update
@@ -546,7 +501,6 @@ async function install() {
         console.log('   uzp init');
         console.log('   uzp add');
         console.log('   uzp --help');
-        releaseLock();
         return;
       } catch (error) {
         if (error.code === 'EEXIST' || error.message.includes('file already exists')) {
@@ -568,25 +522,11 @@ async function install() {
     
     console.log(`⬇️  Downloading ${(asset.size / 1024 / 1024).toFixed(1)}MB from GitHub...`);
     
-    // Check disk space and permissions before downloading
-    try {
-      checkDiskSpace(asset.size);
-    } catch (error) {
-      throw new Error(`Pre-download check failed: ${error.message}`);
-    }
-    
     // Download binary
     try {
       // Ensure bin directory exists before downloading
       ensureBinDir();
       await downloadFile(asset.browser_download_url, BINARY_PATH);
-      
-      // Validate downloaded binary size
-      const stats = fs.statSync(BINARY_PATH);
-      if (stats.size !== asset.size) {
-        fs.unlinkSync(BINARY_PATH); // Remove corrupted file
-        throw new Error(`Downloaded binary size mismatch. Expected: ${asset.size}, Got: ${stats.size}. Please try again.`);
-      }
       
       // Cache the downloaded binary
       cacheDownloadedBinary(binaryName, version, BINARY_PATH);
@@ -651,8 +591,6 @@ async function install() {
     console.log('   uzp add');
     console.log('   uzp --help');
     
-    releaseLock();
-    
   } catch (error) {
     console.error('❌ Installation failed:', error.message);
     console.log('');
@@ -669,8 +607,6 @@ async function install() {
      console.log('   cd uzp-cli');
     console.log('   go build -o uzp');
     console.log('   sudo mv uzp /usr/local/bin/  # Optional: make globally available');
-    
-    releaseLock();
     process.exit(1);
   }
 }
