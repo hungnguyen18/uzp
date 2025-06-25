@@ -20,6 +20,13 @@ function ensureCacheDir() {
   }
 }
 
+function ensureBinDir() {
+  const binDir = path.dirname(BINARY_PATH);
+  if (!fs.existsSync(binDir)) {
+    fs.mkdirSync(binDir, { recursive: true });
+  }
+}
+
 function getCachedBinaryPath(binaryName, version) {
   return path.join(CACHE_DIR, `${binaryName}-${version}`);
 }
@@ -395,6 +402,8 @@ async function install() {
       console.log(`⚡ Using cached binary for version ${version}`);
       
       try {
+        // Ensure bin directory exists before copying
+        ensureBinDir();
         copyFromCache(binaryName, version, BINARY_PATH);
         
         // Make executable on Unix-like systems
@@ -431,6 +440,8 @@ async function install() {
     
     // Download binary
     try {
+      // Ensure bin directory exists before downloading
+      ensureBinDir();
       await downloadFile(asset.browser_download_url, BINARY_PATH);
       
       // Cache the downloaded binary
