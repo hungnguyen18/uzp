@@ -478,6 +478,14 @@ jobs:
             const changedFiles = files.map(f => f.filename);
             console.log('Changed files:', changedFiles);
             
+            // Check if PR author is trusted contributor or owner  
+            const trustedUsers = [
+              'hungnguyen18',           // Repository owner
+              // 'trusted-contributor-1', // Add trusted contributors here
+              // 'trusted-contributor-2', // when you have regular contributors
+            ];
+            const isOwner = pr.user.login === context.repo.owner;
+            
             // Check if contains security-critical files
             // Allow owner to auto-approve workflow changes
             const securityFiles = changedFiles.filter(f => 
@@ -487,14 +495,6 @@ jobs:
               f.includes('go.mod') ||
               f.includes('package.json')
             );
-            
-            // Check if PR author is trusted contributor or owner  
-            const trustedUsers = [
-              'hungnguyen18',           // Repository owner
-              // 'trusted-contributor-1', // Add trusted contributors here
-              // 'trusted-contributor-2', // when you have regular contributors
-            ];
-            const isOwner = pr.user.login === context.repo.owner;
             const isTrusted = trustedUsers.includes(pr.user.login);
             
             // Check CI status
