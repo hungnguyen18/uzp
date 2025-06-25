@@ -39,7 +39,7 @@ func init() {
 	// Initialize vault instance
 	vault = storage.NewVault()
 
-	// Add all subcommands
+	// Add all subcommands to root command
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(addCmd)
 	rootCmd.AddCommand(updateCmd)
