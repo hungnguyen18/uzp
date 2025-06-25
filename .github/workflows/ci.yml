@@ -126,22 +126,34 @@ jobs:
         run: |
           echo "🔍 Running security checks..."
           
-          # Check for common security issues
+          # Check for hardcoded secrets (excluding test files and comments)
           echo "📋 Checking for hardcoded secrets..."
-          if grep -r "password\s*=" --include="*.go" . || \
-             grep -r "secret\s*=" --include="*.go" . || \
-             grep -r "token\s*=" --include="*.go" .; then
+          if grep -r "password\s*=\s*[\"']" --include="*.go" --exclude-dir="*test*" . || \
+             grep -r "secret\s*=\s*[\"']" --include="*.go" --exclude-dir="*test*" . || \
+             grep -r "token\s*=\s*[\"']" --include="*.go" --exclude-dir="*test*" . || \
+             grep -r "api[_-]key\s*=\s*[\"']" --include="*.go" --exclude-dir="*test*" .; then
             echo "⚠️  Potential hardcoded secrets found!"
+            exit 1
           else
             echo "✅ No hardcoded secrets detected"
           fi
           
-          # Check for unsafe functions
-          echo "📋 Checking for unsafe functions..."
-          if grep -r "fmt\.Print\|log\.Print" --include="*.go" .; then
-            echo "⚠️  Found potential information disclosure via print statements"
+          # Check for debug/sensitive information disclosure
+          echo "📋 Checking for information disclosure..."
+          if grep -r "fmt\.Printf.*password\|fmt\.Printf.*secret\|fmt\.Printf.*key" --include="*.go" .; then
+            echo "⚠️  Found potential sensitive information disclosure via printf"
+            exit 1
           else
-            echo "✅ No unsafe print statements found"
+            echo "✅ No sensitive information disclosure found"
+          fi
+          
+          # Check for unsafe crypto practices
+          echo "📋 Checking for unsafe crypto practices..."
+          if grep -r "md5\|sha1\|crypto/des\|crypto/rc4" --include="*.go" .; then
+            echo "⚠️  Found usage of deprecated crypto algorithms"
+            exit 1
+          else
+            echo "✅ No deprecated crypto algorithms found"
           fi
       
       - name: Run Govulncheck
