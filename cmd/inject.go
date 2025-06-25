@@ -4,10 +4,8 @@ import (
 	"fmt"
 	"os"
 	"sort"
-	"syscall"
 
 	"github.com/spf13/cobra"
-	"golang.org/x/term"
 )
 
 var projectName string
@@ -45,23 +43,9 @@ NOTE:
 			return fmt.Errorf("missing project name\n\nusage: uzp inject -p PROJECT_NAME > .env\n\nSee 'uzp inject --help' for examples")
 		}
 
-		// Check if vault is unlocked, auto-unlock if needed
-		if !vault.IsUnlocked() {
-			fmt.Fprint(os.Stderr, "Enter master password: ")
-			password, err := term.ReadPassword(int(syscall.Stdin))
-			if err != nil {
-				return fmt.Errorf("failed to read password: %w", err)
-			}
-			fmt.Fprintln(os.Stderr) // New line after password
-
-			if err := vault.Unlock(string(password)); err != nil {
-				return fmt.Errorf("invalid password")
-			}
-
-			// Clear password from memory
-			for i := range password {
-				password[i] = 0
-			}
+		// Check if vault is unlocked, prompt for password if needed
+		if err := ensureVaultUnlocked(); err != nil {
+			return err
 		}
 
 		// Get project secrets
