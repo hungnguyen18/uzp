@@ -30,12 +30,12 @@ go mod download && npm install
 go build -o uzp . && ./uzp --help
 
 # 3. Create your feature
-git checkout -b feature/your-feature-name
+git checkout -b feature/your_feature_name
 # ... make your changes ...
 
 # 4. Submit
 git add . && git commit -m "feat: your description"
-git push origin feature/your-feature-name
+git push origin feature/your_feature_name
 # Then create PR on GitHub
 ```
 
@@ -84,11 +84,59 @@ That's it! Our automated CI will test your code and most changes get merged auto
 ### Branch Naming
 Use this format: `<type>/<description_in_snake_case>`
 
+**Main prefixes:**
 ```bash
 feature/add_backup_export     # New features
-bug/fix_clipboard_leak        # Bug fixes
+bug/fix_clipboard_leak        # Bug fixes  
 docs/update_readme           # Documentation
+security/strengthen_auth      # Security improvements
 ```
+
+**Additional prefixes:**
+```bash
+hotfix/critical_vault_fix     # Urgent production fixes
+test/add_crypto_tests        # Adding or improving tests
+refactor/cleanup_storage     # Code restructuring 
+perf/optimize_encryption     # Performance improvements
+devops/update_ci_pipeline    # CI/CD and infrastructure
+misc/fix_typos              # Minor improvements, cleanup
+```
+
+> 💡 **Choose the right prefix:** Use `feature/` for new functionality, `bug/` for fixes, `docs/` for documentation. For security-related work, use `security/` prefix.
+
+### Branch to Commit Mapping
+| Branch Prefix | Commit Type | Example |
+|---------------|-------------|---------|
+| `feature/` | `feat:` | `feature/add_export` → `feat: add vault export functionality` |
+| `bug/` | `fix:` | `bug/fix_memory_leak` → `fix: prevent clipboard memory leak` |
+| `docs/` | `docs:` | `docs/update_readme` → `docs: improve installation guide` |
+| `security/` | `security:` | `security/strengthen_auth` → `security: add password strength validation` |
+| `hotfix/` | `hotfix:` | `hotfix/vault_corruption` → `hotfix: prevent vault corruption on crash` |
+
+### When to Use Each Prefix
+
+**🚀 Most common (start here):**
+- `feature/` - Adding new commands, options, or functionality
+- `bug/` - Fixing broken behavior or errors
+- `docs/` - Updating README, help text, examples, comments
+
+**🔒 Security-focused:**
+- `security/` - Cryptography, authentication, or security hardening
+
+**⚡ Code quality:**
+- `test/` - Adding unit tests, integration tests
+- `refactor/` - Improving code structure without changing behavior
+- `perf/` - Making things faster or use less memory
+
+**🛠️ Infrastructure:**
+- `devops/` - GitHub Actions, build scripts, deployment
+- `ci/` - Continuous integration improvements
+
+**🆘 Urgent:**
+- `hotfix/` - Critical bugs that need immediate attention
+
+**🧹 Maintenance:**
+- `misc/` - Typos, formatting, small cleanups
 
 ### Code Style
 
@@ -165,11 +213,15 @@ security: strengthen password validation
 
 **Types:**
 - `feat` - New features
-- `fix` - Bug fixes
+- `fix` - Bug fixes  
 - `docs` - Documentation
 - `security` - Security improvements
-- `test` - Tests
-- `refactor` - Code cleanup
+- `test` - Adding or improving tests
+- `refactor` - Code restructuring
+- `perf` - Performance improvements
+- `hotfix` - Urgent production fixes
+- `ci` - CI/CD and infrastructure changes
+- `misc` - Minor improvements, cleanup
 
 ---
 
