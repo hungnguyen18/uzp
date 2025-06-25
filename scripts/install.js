@@ -13,6 +13,7 @@ const GITHUB_RELEASES_URL = 'https://api.github.com/repos/hungnguyen18/uzp-cli/r
 // Cache directory in user's home
 const CACHE_DIR = path.join(os.homedir(), '.uzp-cache');
 const VERSION_FILE = path.join(CACHE_DIR, 'version.txt');
+const LOCK_FILE = path.join(CACHE_DIR, 'install.lock');
 
 function ensureCacheDir() {
   if (!fs.existsSync(CACHE_DIR)) {
@@ -24,6 +25,49 @@ function ensureBinDir() {
   const binDir = path.dirname(BINARY_PATH);
   if (!fs.existsSync(binDir)) {
     fs.mkdirSync(binDir, { recursive: true });
+  }
+}
+
+function checkDiskSpace(sizeBytes) {
+  try {
+    const stats = fs.statSync(path.dirname(BINARY_PATH));
+    // Note: This is a basic check, disk space detection can be complex
+    // For now, we'll just ensure the directory is writable
+    const testFile = path.join(path.dirname(BINARY_PATH), '.write-test');
+    fs.writeFileSync(testFile, 'test');
+    fs.unlinkSync(testFile);
+    return true;
+  } catch (error) {
+    throw new Error(`Insufficient disk space or permission denied: ${error.message}`);
+  }
+}
+
+function acquireLock() {
+  ensureCacheDir();
+  
+  if (fs.existsSync(LOCK_FILE)) {
+    const lockData = fs.readFileSync(LOCK_FILE, 'utf8');
+    const lockTime = parseInt(lockData, 10);
+    const currentTime = Date.now();
+    
+    // If lock is older than 5 minutes, consider it stale and remove it
+    if (currentTime - lockTime > 5 * 60 * 1000) {
+      fs.unlinkSync(LOCK_FILE);
+    } else {
+      throw new Error('Another installation is in progress. Please wait and try again.');
+    }
+  }
+  
+  fs.writeFileSync(LOCK_FILE, Date.now().toString(), 'utf8');
+}
+
+function releaseLock() {
+  try {
+    if (fs.existsSync(LOCK_FILE)) {
+      fs.unlinkSync(LOCK_FILE);
+    }
+  } catch (error) {
+    // Ignore lock release errors
   }
 }
 
@@ -93,7 +137,9 @@ function downloadFile(url, dest) {
       }
     };
     
-    https.get(url, (response) => {
+    const request = https.get(url, {
+      timeout: 60000  // 60 second timeout for download
+    }, (response) => {
       if (response.statusCode === 302 || response.statusCode === 301) {
         file.destroy();
         return downloadFile(response.headers.location, dest).then(resolve).catch(reject);
@@ -155,6 +201,12 @@ function downloadFile(url, dest) {
         resolved = true;
         reject(err);
       }
+    }).on('timeout', () => {
+      cleanup();
+      if (!resolved) {
+        resolved = true;
+        reject(new Error('Download timed out. Please check your internet connection.'));
+      }
     });
   });
 }
@@ -192,10 +244,11 @@ async function getSpecificRelease(version) {
   const url = `https://api.github.com/repos/hungnguyen18/uzp-cli/releases/tags/${tagName}`;
   
   return new Promise((resolve, reject) => {
-    https.get(url, {
+    const request = https.get(url, {
       headers: {
         'User-Agent': 'uzp-npm-installer'
-      }
+      },
+      timeout: 30000  // 30 second timeout
     }, (response) => {
       let data = '';
       
@@ -230,16 +283,20 @@ async function getSpecificRelease(version) {
       });
     }).on('error', (err) => {
       reject(new Error(`Failed to fetch GitHub release: ${err.message}`));
+    }).on('timeout', () => {
+      request.destroy();
+      reject(new Error('GitHub API request timed out. Please check your internet connection.'));
     });
   });
 }
 
 async function getLatestRelease() {
   return new Promise((resolve, reject) => {
-    https.get(GITHUB_RELEASES_URL, {
+    const request = https.get(GITHUB_RELEASES_URL, {
       headers: {
         'User-Agent': 'uzp-npm-installer'
-      }
+      },
+      timeout: 30000  // 30 second timeout
     }, (response) => {
       let data = '';
       
@@ -274,6 +331,9 @@ async function getLatestRelease() {
       });
     }).on('error', (err) => {
       reject(new Error(`Failed to fetch GitHub release: ${err.message}`));
+    }).on('timeout', () => {
+      request.destroy();
+      reject(new Error('GitHub API request timed out. Please check your internet connection.'));
     });
   });
 }
@@ -331,6 +391,9 @@ function suggestReinstall() {
 
 async function install() {
   try {
+    // Acquire installation lock to prevent concurrent installations
+    acquireLock();
+    
     console.log('📦 Installing UZP...');
     
     const binaryName = getBinaryName();
@@ -374,12 +437,44 @@ async function install() {
           console.log('   ⚠️ Could not remove existing binary, continuing...');
         }
       } else if (isSameVersion) {
-        // Latest requested and same version - skip unless forced
+        // Latest requested and same version - skip unless forced, but ensure symlink exists
         console.log(`✅ UZP ${version} is already installed and up to date!`);
+        
+        // Still need to ensure symlink exists for already installed version
+        try {
+          const npmPrefix = execSync('npm prefix -g', { encoding: 'utf8' }).trim();
+          const npmBin = path.join(npmPrefix, 'bin');
+          
+          // Ensure npm bin directory exists
+          if (!fs.existsSync(npmBin)) {
+            fs.mkdirSync(npmBin, { recursive: true });
+          }
+          
+          if (process.platform === 'win32') {
+            // Windows: Check/create batch file
+            const cmdPath = path.join(npmBin, BINARY_NAME + '.cmd');
+            if (!fs.existsSync(cmdPath)) {
+              const batchContent = `@echo off\n"${BINARY_PATH}" %*\n`;
+              fs.writeFileSync(cmdPath, batchContent, 'utf8');
+              console.log(`🔗 Created missing batch file: ${cmdPath}`);
+            }
+          } else {
+            // Unix-like: Check/create symlink
+            const symlinkPath = path.join(npmBin, BINARY_NAME);
+            if (!fs.existsSync(symlinkPath)) {
+              fs.symlinkSync(BINARY_PATH, symlinkPath);
+              console.log(`🔗 Created missing symlink: ${symlinkPath} -> ${BINARY_PATH}`);
+            }
+          }
+        } catch (error) {
+          console.log(`⚠️  Could not create symlink/batch file (${error.message})`);
+        }
+        
         console.log('');
         console.log('💡 To force reinstall: npx uzp-reinstall');
         console.log('💡 To install specific version: npm install -g uzp-cli@1.0.6');
         console.log('🚀 Ready to use: uzp --help');
+        releaseLock();
         return;
       } else {
         // Latest requested and different version - update
@@ -413,19 +508,36 @@ async function install() {
         
         // Create symlink manually for cached installation too
         try {
-          const npmBin = execSync('npm bin -g', { encoding: 'utf8' }).trim();
-          const symlinkPath = path.join(npmBin, BINARY_NAME);
+          const npmPrefix = execSync('npm prefix -g', { encoding: 'utf8' }).trim();
+          const npmBin = path.join(npmPrefix, 'bin');
           
-          // Remove existing symlink if it exists
-          if (fs.existsSync(symlinkPath)) {
-            fs.unlinkSync(symlinkPath);
+          // Ensure npm bin directory exists
+          if (!fs.existsSync(npmBin)) {
+            fs.mkdirSync(npmBin, { recursive: true });
           }
           
-          // Create new symlink
-          fs.symlinkSync(BINARY_PATH, symlinkPath);
-          console.log(`🔗 Created symlink: ${symlinkPath} -> ${BINARY_PATH}`);
+          if (process.platform === 'win32') {
+            // Windows: Create batch file
+            const cmdPath = path.join(npmBin, BINARY_NAME + '.cmd');
+            const batchContent = `@echo off\n"${BINARY_PATH}" %*\n`;
+            
+            fs.writeFileSync(cmdPath, batchContent, 'utf8');
+            console.log(`🔗 Created batch file: ${cmdPath}`);
+          } else {
+            // Unix-like: Create symlink
+            const symlinkPath = path.join(npmBin, BINARY_NAME);
+            
+            // Remove existing symlink if it exists
+            if (fs.existsSync(symlinkPath)) {
+              fs.unlinkSync(symlinkPath);
+            }
+            
+            // Create new symlink
+            fs.symlinkSync(BINARY_PATH, symlinkPath);
+            console.log(`🔗 Created symlink: ${symlinkPath} -> ${BINARY_PATH}`);
+          }
         } catch (error) {
-          console.log(`⚠️  Could not create symlink (${error.message})`);
+          console.log(`⚠️  Could not create symlink/batch file (${error.message})`);
         }
 
         console.log('✅ UZP installed successfully from cache!');
@@ -434,6 +546,7 @@ async function install() {
         console.log('   uzp init');
         console.log('   uzp add');
         console.log('   uzp --help');
+        releaseLock();
         return;
       } catch (error) {
         if (error.code === 'EEXIST' || error.message.includes('file already exists')) {
@@ -455,11 +568,25 @@ async function install() {
     
     console.log(`⬇️  Downloading ${(asset.size / 1024 / 1024).toFixed(1)}MB from GitHub...`);
     
+    // Check disk space and permissions before downloading
+    try {
+      checkDiskSpace(asset.size);
+    } catch (error) {
+      throw new Error(`Pre-download check failed: ${error.message}`);
+    }
+    
     // Download binary
     try {
       // Ensure bin directory exists before downloading
       ensureBinDir();
       await downloadFile(asset.browser_download_url, BINARY_PATH);
+      
+      // Validate downloaded binary size
+      const stats = fs.statSync(BINARY_PATH);
+      if (stats.size !== asset.size) {
+        fs.unlinkSync(BINARY_PATH); // Remove corrupted file
+        throw new Error(`Downloaded binary size mismatch. Expected: ${asset.size}, Got: ${stats.size}. Please try again.`);
+      }
       
       // Cache the downloaded binary
       cacheDownloadedBinary(binaryName, version, BINARY_PATH);
@@ -479,19 +606,39 @@ async function install() {
     
     // Create symlink manually (NPM doesn't create it when binary is downloaded in postinstall)
     try {
-      const npmBin = execSync('npm bin -g', { encoding: 'utf8' }).trim();
-      const symlinkPath = path.join(npmBin, BINARY_NAME);
+      const npmPrefix = execSync('npm prefix -g', { encoding: 'utf8' }).trim();
+      const npmBin = path.join(npmPrefix, 'bin');
       
-      // Remove existing symlink if it exists
-      if (fs.existsSync(symlinkPath)) {
-        fs.unlinkSync(symlinkPath);
+      // Ensure npm bin directory exists
+      if (!fs.existsSync(npmBin)) {
+        fs.mkdirSync(npmBin, { recursive: true });
       }
       
-      // Create new symlink
-      fs.symlinkSync(BINARY_PATH, symlinkPath);
-      console.log(`🔗 Created symlink: ${symlinkPath} -> ${BINARY_PATH}`);
+      if (process.platform === 'win32') {
+        // Windows: Create batch file
+        const cmdPath = path.join(npmBin, BINARY_NAME + '.cmd');
+        if (fs.existsSync(cmdPath)) {
+          fs.unlinkSync(cmdPath);
+        }
+        
+        const batchContent = `@echo off\n"${BINARY_PATH}" %*\n`;
+        fs.writeFileSync(cmdPath, batchContent, 'utf8');
+        console.log(`🔗 Created batch file: ${cmdPath}`);
+      } else {
+        // Unix-like: Create symlink
+        const symlinkPath = path.join(npmBin, BINARY_NAME);
+        
+        // Remove existing symlink if it exists
+        if (fs.existsSync(symlinkPath)) {
+          fs.unlinkSync(symlinkPath);
+        }
+        
+        // Create new symlink
+        fs.symlinkSync(BINARY_PATH, symlinkPath);
+        console.log(`🔗 Created symlink: ${symlinkPath} -> ${BINARY_PATH}`);
+      }
     } catch (error) {
-      console.log(`⚠️  Could not create symlink (${error.message})`);
+      console.log(`⚠️  Could not create symlink/batch file (${error.message})`);
       console.log('   The binary is installed but may not be in PATH');
       console.log(`   Binary location: ${BINARY_PATH}`);
     }
@@ -503,6 +650,8 @@ async function install() {
     console.log('   uzp init');
     console.log('   uzp add');
     console.log('   uzp --help');
+    
+    releaseLock();
     
   } catch (error) {
     console.error('❌ Installation failed:', error.message);
@@ -520,6 +669,8 @@ async function install() {
      console.log('   cd uzp-cli');
     console.log('   go build -o uzp');
     console.log('   sudo mv uzp /usr/local/bin/  # Optional: make globally available');
+    
+    releaseLock();
     process.exit(1);
   }
 }
