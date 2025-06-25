@@ -27,7 +27,8 @@ jobs:
         id: pr-info
         run: |
           echo "pr_number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
-          echo "pr_title=${{ github.event.pull_request.title }}" >> $GITHUB_OUTPUT
+          export PR_TITLE="${{ github.event.pull_request.title }}"
+          echo "pr_title=$PR_TITLE" >> $GITHUB_OUTPUT
           echo "pr_author=${{ github.event.pull_request.user.login }}" >> $GITHUB_OUTPUT
           echo "base_ref=${{ github.event.pull_request.base.ref }}" >> $GITHUB_OUTPUT
           echo "head_ref=${{ github.event.pull_request.head.ref }}" >> $GITHUB_OUTPUT
