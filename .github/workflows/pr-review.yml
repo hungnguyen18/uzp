@@ -479,10 +479,11 @@ jobs:
             console.log('Changed files:', changedFiles);
             
             // Check if contains security-critical files
+            // Allow owner to auto-approve workflow changes
             const securityFiles = changedFiles.filter(f => 
               f.includes('internal/crypto/') || 
               f.includes('internal/storage/') ||
-              f.includes('.github/workflows/') ||
+              (!isOwner && f.includes('.github/workflows/')) ||  // Only block workflows for non-owners
               f.includes('go.mod') ||
               f.includes('package.json')
             );
