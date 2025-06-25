@@ -201,7 +201,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: v${{ needs.build-binaries.outputs.version }}
-          name: "UZP v${{ needs.build-binaries.outputs.version }} - User's Zecure Pocket"
+          name: "v${{ needs.build-binaries.outputs.version }}"
           body_path: changelog.md
           files: build/*
           draft: false
