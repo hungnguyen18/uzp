@@ -305,4 +305,187 @@ jobs:
                 
                 **⚠️ This PR cannot be merged until owner approval is received.**`
               });
-            } 
+            }
+
+  automated-approval:
+    name: Automated Approval for Safe Changes
+    runs-on: ubuntu-latest
+    needs: [automated-review]
+    if: |
+      github.event.action == 'opened' || 
+      github.event.action == 'synchronize' ||
+      github.event_name == 'pull_request_review'
+    
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+      
+      - name: Check if Auto-Approval Eligible
+        id: check-eligibility
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // Get PR details
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            
+            // Get changed files
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            
+            const changedFiles = files.map(f => f.filename);
+            console.log('Changed files:', changedFiles);
+            
+            // Check if contains security-critical files
+            const securityFiles = changedFiles.filter(f => 
+              f.includes('internal/crypto/') || 
+              f.includes('internal/storage/') ||
+              f.includes('.github/workflows/') ||
+              f.includes('go.mod') ||
+              f.includes('package.json')
+            );
+            
+            // Check if PR author is trusted contributor or owner  
+            const trustedUsers = [
+              'hungnguyen18',           // Repository owner
+              // 'trusted-contributor-1', // Add trusted contributors here
+              // 'trusted-contributor-2', // when you have regular contributors
+            ];
+            const isOwner = pr.user.login === context.repo.owner;
+            const isTrusted = trustedUsers.includes(pr.user.login);
+            
+            // Check CI status
+            const { data: checks } = await github.rest.checks.listForRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: pr.head.sha
+            });
+            
+            const requiredChecks = ['test', 'build', 'lint', 'security'];
+            const passedChecks = checks.check_runs
+              .filter(check => requiredChecks.some(req => check.name.includes(req)))
+              .filter(check => check.conclusion === 'success');
+            
+            const allChecksPass = passedChecks.length >= requiredChecks.length;
+            
+            // Check for unresolved conversations
+            const { data: reviews } = await github.rest.pulls.listReviews({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            
+            const hasRequestedChanges = reviews.some(review => review.state === 'CHANGES_REQUESTED');
+            
+            // Check PR labels
+            const hasSecurityLabel = pr.labels.some(label => 
+              label.name.includes('security-review-required') ||
+              label.name.includes('needs-owner-review')
+            );
+            
+            // Determine eligibility
+            const eligible = 
+              securityFiles.length === 0 &&          // No security files
+              allChecksPass &&                       // All CI checks pass
+              !hasRequestedChanges &&                // No requested changes
+              !hasSecurityLabel &&                   // No security labels
+              (isOwner || isTrusted);                 // Owner or trusted user
+            
+            console.log('Auto-approval eligibility:', {
+              securityFiles: securityFiles.length,
+              allChecksPass,
+              hasRequestedChanges,
+              hasSecurityLabel,
+              isOwnerOrTrusted: isOwner || isTrusted,
+              eligible
+            });
+            
+            return {
+              eligible,
+              reason: eligible ? 'All conditions met for auto-approval' : 
+                     securityFiles.length > 0 ? 'Contains security-critical files' :
+                     !allChecksPass ? 'CI checks not all passing' :
+                     hasRequestedChanges ? 'Has unresolved change requests' :
+                     hasSecurityLabel ? 'Has security review labels' :
+                     'Author not authorized for auto-approval'
+            };
+      
+      - name: Auto-Approve Safe Changes
+        if: fromJSON(steps.check-eligibility.outputs.result).eligible
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // Create approval review
+            await github.rest.pulls.createReview({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              event: 'APPROVE',
+              body: `## 🤖 Automated Approval
+              
+              This PR has been automatically approved because:
+              
+              ✅ **All CI checks pass**
+              ✅ **No security-critical files modified**
+              ✅ **No unresolved change requests**  
+              ✅ **Author is authorized for auto-approval**
+              
+              **Files changed:** Non-security code only
+              **Status:** Ready to merge
+              
+              ---
+              *This approval was generated automatically. Manual review can still override if needed.*`
+            });
+            
+            // Add auto-approved label
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['bot: approved', 'ready-to-merge']
+            });
+            
+            console.log('✅ PR automatically approved');
+      
+      - name: Comment Why Not Auto-Approved
+        if: "!fromJSON(steps.check-eligibility.outputs.result).eligible"
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const result = ${{ steps.check-eligibility.outputs.result }};
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## 🔍 Manual Review Required
+              
+              This PR requires manual review because:
+              
+              **Reason:** ${result.reason}
+              
+              **Manual review needed from:**
+              - 👑 Repository owner (@${context.repo.owner})
+              
+              **To get automated approval in the future:**
+              - ✅ Ensure all CI checks pass
+              - 🔒 Avoid modifying security-critical files
+              - 📋 Complete all PR checklist items
+              
+              ---
+              *Once manual review is complete, this PR can be merged.*`
+            });
+            
+            console.log('ℹ️ Manual review required:', result.reason);
