@@ -3,6 +3,7 @@
 [![npm downloads](https://img.shields.io/npm/dm/uzp-cli.svg)](https://www.npmjs.com/package/uzp-cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/hungnguyen18/uzp-cli)](https://golang.org/)
+[![Go 1.23.10+](https://img.shields.io/badge/Go-1.23.10+-blue.svg)](https://golang.org/dl/)
 [![Security](https://img.shields.io/badge/Security-AES--256--GCM-green.svg)](SECURITY.md)
 [![Contributing](https://img.shields.io/badge/Contributing-Welcome-brightgreen.svg)](CONTRIBUTING.md)
 
@@ -17,6 +18,7 @@ A professional command-line tool for securely storing and managing sensitive inf
 - [Security](#security)
 - [Examples](#examples)
 - [Contributing](#contributing)
+- [Releases](#releases)
 - [Support](#support)
 
 ## Features
@@ -154,9 +156,27 @@ DATABASE_URL=postgresql://user:pass@host:5432/db
 
 ## Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for detailed guidelines on development practices, security requirements, and submission process.
+**New contributors:** Get started quickly with the [**Quick Start section**](CONTRIBUTING.md#-quick-start---get-contributing-in-5-minutes) in our Contributing Guide! ⚡
+
+Our [Contributing Guide](CONTRIBUTING.md) covers everything from 5-minute setup to comprehensive development practices, security requirements, and submission process.
 
 **Thank you for helping make UZP-CLI more secure! 🔐**
+
+## Releases
+
+**Release Information:**
+- 🔔 **Latest**: Check [GitHub Releases](https://github.com/hungnguyen18/uzp-cli/releases) for newest version
+- 📅 **Schedule**: Monthly minor releases, patches as needed for critical bugs
+- 📦 **Versioning**: Follows [Semantic Versioning](https://semver.org/) (vMAJOR.MINOR.PATCH)
+- 📝 **Notes**: Detailed release notes with features, fixes, and contributor credits
+
+```bash
+# Check your installed version
+uzp --version
+
+# Update to latest version  
+npm update -g uzp-cli
+```
 
 ## Support
 
@@ -167,8 +187,10 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 - 🔒 [Security Issues](SECURITY.md) - Private security reporting
 
 **Resources:**
-- 📖 [Documentation](CONTRIBUTING.md) - Contributing guidelines
+- 📖 [Contributing Guidelines](CONTRIBUTING.md) - Development and contribution guide
+- 🔐 [Security Policy](SECURITY.md) - Security practices and vulnerability reporting
 - 📦 [NPM Package](https://www.npmjs.com/package/uzp-cli) - Official package
+- 🏗️ [Technical Docs](docs/) - Internal documentation for maintainers
 - 📜 [License](LICENSE) - MIT License
 
 ---

@@ -18,8 +18,8 @@ func CopyToClipboard(text string, ttl time.Duration) error {
 	go func() {
 		time.Sleep(ttl)
 		// Clear by writing empty string
-		clipboard.WriteAll("")
+		_ = clipboard.WriteAll("")
 	}()
 
 	return nil
-} 
+}

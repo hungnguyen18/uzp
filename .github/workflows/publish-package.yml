@@ -4,10 +4,45 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      confirm_release:
+        description: 'Type "CONFIRM" to proceed with release'
+        required: true
+        default: ''
 
 jobs:
+  authorization-check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check authorized user
+        run: |
+          AUTHORIZED_USERS=("hungnguyen18")
+          CURRENT_USER="${{ github.actor }}"
+          
+          echo "🔍 Checking authorization for user: $CURRENT_USER"
+          
+          if [[ " ${AUTHORIZED_USERS[@]} " =~ " ${CURRENT_USER} " ]]; then
+            echo "✅ User $CURRENT_USER is authorized for release"
+          else
+            echo "❌ User $CURRENT_USER is NOT authorized for release"
+            echo "📋 Authorized users: ${AUTHORIZED_USERS[*]}"
+            exit 1
+          fi
+      
+      - name: Validate manual confirmation
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if [ "${{ github.event.inputs.confirm_release }}" != "CONFIRM" ]; then
+            echo "❌ Manual release requires typing 'CONFIRM' in the input field"
+            exit 1
+          fi
+          echo "✅ Manual release confirmed"
+
   publish-npm:
     runs-on: ubuntu-latest
+    needs: authorization-check
     permissions:
       contents: read
     outputs:
@@ -74,8 +109,8 @@ jobs:
 
   publish-github-packages:
     runs-on: ubuntu-latest
-    needs: publish-npm
-    if: always()  # Run regardless of NPM job status
+    needs: [authorization-check, publish-npm]
+    if: always() && needs.authorization-check.result == 'success'  # Run only if authorized
     permissions:
       contents: read
       packages: write
@@ -161,8 +196,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    needs: [publish-npm, publish-github-packages]
-    if: always()
+    needs: [authorization-check, publish-npm, publish-github-packages]
+    if: always() && needs.authorization-check.result == 'success'
     steps:
       - name: Publication Summary
         run: |

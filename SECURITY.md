@@ -8,11 +8,13 @@ UZP-CLI is a security-focused tool designed to handle sensitive information such
 
 We provide security updates for the following versions:
 
-| Version | Supported          | Notes |
-| ------- | ------------------ | ----- |
-| 1.0.x   | :white_check_mark: | Current stable release |
-| 0.9.x   | :white_check_mark: | Legacy support until 2024-06-01 |
-| < 0.9   | :x:                | Please upgrade immediately |
+| Version | Supported          | Go Requirement | Notes |
+| ------- | ------------------ | -------------- | ----- |
+| 1.0.x   | :white_check_mark: | Go 1.23.10+    | Current stable release |
+| 0.9.x   | :white_check_mark: | Go 1.21+       | Legacy support until 2024-06-01 |
+| < 0.9   | :x:                | -              | Please upgrade immediately |
+
+> **⚠️ Security Notice**: Version 1.0.x requires Go 1.23.10+ to avoid [GO-2025-3750](https://pkg.go.dev/vuln/GO-2025-3750) affecting file operations.
 
 **Recommendation:** Always use the latest stable version for the best security posture.
 
@@ -30,7 +32,7 @@ UZP-CLI implements multiple layers of security:
 ## Reporting Security Vulnerabilities
 
 ### Quick Report
-For urgent security issues, please email: **security@hungnguyen.dev**
+For urgent security issues, please email: **hungnguyen18.dev@gmail.com**
 
 ### Detailed Process
 
@@ -38,7 +40,7 @@ For urgent security issues, please email: **security@hungnguyen.dev**
 2. **DO** use GitHub's Private Security Advisory feature:
    - Go to: https://github.com/hungnguyen18/uzp-cli/security/advisories
    - Click "Report a vulnerability"
-3. **Alternatively**, email: security@hungnguyen.dev with:
+3. **Alternatively**, email: hungnguyen18.dev@gmail.com with:
    - Subject: `[SECURITY] UZP-CLI Vulnerability Report`
    - Detailed description of the vulnerability
    - Steps to reproduce

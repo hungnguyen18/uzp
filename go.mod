@@ -1,6 +1,6 @@
 module github.com/hungnguyen18/uzp-cli
 
-go 1.21
+go 1.23
 
 require (
 	github.com/atotto/clipboard v0.1.4
