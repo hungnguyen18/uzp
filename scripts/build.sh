@@ -2,7 +2,17 @@
 
 set -e
 
-VERSION=${1:-"1.0.0"}
+# Get version from package.json if not provided as argument
+if [ -z "$1" ]; then
+  if command -v node >/dev/null 2>&1; then
+    VERSION=$(node -e "console.log(require('./package.json').version)")
+  else
+    VERSION="1.0.0"
+    echo "⚠️  Node.js not found, using default version $VERSION"
+  fi
+else
+  VERSION=$1
+fi
 BINARY_NAME="uzp"
 BUILD_DIR="build"
 
@@ -32,7 +42,7 @@ for PLATFORM in "${PLATFORMS[@]}"; do
   
   echo "📦 Building $OUTPUT_NAME..."
   
-  env GOOS=$GOOS GOARCH=$GOARCH go build -ldflags="-s -w -X main.version=$VERSION" -trimpath -o "$BUILD_DIR/$OUTPUT_NAME" .
+  env GOOS=$GOOS GOARCH=$GOARCH go build -ldflags="-s -w -X github.com/hungnguyen18/uzp-cli/cmd.Version=$VERSION" -trimpath -o "$BUILD_DIR/$OUTPUT_NAME" .
   
   echo "✅ Built $OUTPUT_NAME"
 done

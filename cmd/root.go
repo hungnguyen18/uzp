@@ -1,13 +1,19 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/hungnguyen18/uzp-cli/internal/storage"
 	"github.com/spf13/cobra"
 )
 
+// Version information - injected at build time
+var Version = "dev" // Default value, will be overridden by ldflags during build
+
 var (
-	vault   *storage.Vault
-	rootCmd = &cobra.Command{
+	vault       *storage.Vault
+	showVersion bool
+	rootCmd     = &cobra.Command{
 		Use:   "uzp",
 		Short: "Secure secrets manager",
 		Long: `UZP - Secure Secrets Manager
@@ -32,10 +38,21 @@ EXAMPLES:
   uzp search database         Search for secrets
 
 STORAGE: ~/.uzp/uzp.vault (encrypted)`,
+		Run: func(cmd *cobra.Command, args []string) {
+			if showVersion {
+				fmt.Printf("uzp version %s\n", Version)
+				return
+			}
+			// If no subcommand is provided, show help by default
+			_ = cmd.Help() // Explicitly ignore error as it's unlikely to fail for help display
+		},
 	}
 )
 
 func init() {
+	// Add version flags
+	rootCmd.Flags().BoolVarP(&showVersion, "version", "v", false, "Print version information")
+
 	// Initialize vault instance
 	vault = storage.NewVault()
 
