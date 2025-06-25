@@ -176,7 +176,12 @@ func (v *Vault) Initialize(masterPassword string) error {
 	if err := v.save(); err != nil {
 		return err
 	}
-	v.saveSession()
+
+	// Save session (non-critical error)
+	if err := v.saveSession(); err != nil {
+		// Log warning but don't fail initialization
+		fmt.Fprintf(os.Stderr, "Warning: failed to save session: %v\n", err)
+	}
 
 	return nil
 }
@@ -228,8 +233,11 @@ func (v *Vault) Unlock(masterPassword string) error {
 	v.unlocked = true
 	v.unlockedAt = time.Now()
 
-	// Save session
-	v.saveSession()
+	// Save session (non-critical error)
+	if err := v.saveSession(); err != nil {
+		// Log warning but don't fail unlock
+		fmt.Fprintf(os.Stderr, "Warning: failed to save session: %v\n", err)
+	}
 
 	return nil
 }

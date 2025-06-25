@@ -107,7 +107,7 @@ jobs:
         uses: golangci/golangci-lint-action@v4
         with:
           version: latest
-          args: --timeout=5m
+          args: --timeout=5m --out-format=colored-line-number
 
   security:
     name: Security Scan
@@ -117,15 +117,26 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Run Gosec Security Scanner
-        uses: securecodewarrior/github-action-gosec@master
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
-          args: './...'
+          go-version: '1.22'
       
-      - name: Run Nancy vulnerability scanner
+      - name: Run Gosec Security Scanner
         run: |
-          go install github.com/sonatypecommunity/nancy@latest
-          go list -json -deps ./... | nancy sleuth
+          go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
+          gosec -fmt sarif -out gosec-results.sarif ./...
+          
+      - name: Upload Gosec results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: gosec-results.sarif
+      
+      - name: Run Govulncheck
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...
 
   node-package:
     name: Test Node.js Package
