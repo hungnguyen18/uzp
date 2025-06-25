@@ -34,6 +34,7 @@ jobs:
           echo "head_ref=$HEAD_REF" >> $GITHUB_OUTPUT
         env:
           HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_BODY: ${{ github.event.pull_request.body }}
       
       - name: Analyze PR Changes
         id: analyze-changes
@@ -112,19 +113,18 @@ jobs:
       - name: PR Checklist Validation
         id: checklist-validation
         run: |
-          pr_body="${{ github.event.pull_request.body }}"
           checklist_issues=""
           
           # Check if security checklist is completed
           if [[ "${{ steps.analyze-changes.outputs.security_changes }}" != "" ]]; then
-            if ! echo "$pr_body" | grep -q "\\[x\\].*security"; then
+            if ! echo "$PR_BODY" | grep -q "\\[x\\].*security"; then
               checklist_issues="${checklist_issues}\n- ❌ Security checklist not completed"
             fi
           fi
           
           # Check if testing checklist is completed  
           if [[ "${{ steps.analyze-changes.outputs.go_changes }}" != "" ]]; then
-            if ! echo "$pr_body" | grep -q "\\[x\\].*test"; then
+            if ! echo "$PR_BODY" | grep -q "\\[x\\].*test"; then
               checklist_issues="${checklist_issues}\n- ❌ Testing checklist not completed"
             fi
           fi
