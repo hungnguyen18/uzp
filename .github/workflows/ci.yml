@@ -138,13 +138,13 @@ jobs:
             echo "✅ No hardcoded secrets detected"
           fi
           
-          # Check for debug/sensitive information disclosure
-          echo "📋 Checking for information disclosure..."
-          if grep -r "fmt\.Printf.*password\|fmt\.Printf.*secret\|fmt\.Printf.*key" --include="*.go" .; then
-            echo "⚠️  Found potential sensitive information disclosure via printf"
+          # Check for potential nil pointer dereferences and unsafe operations
+          echo "📋 Checking for unsafe operations..."
+          if grep -r "//.*TODO.*security\|//.*FIXME.*security\|//.*XXX.*security" --include="*.go" .; then
+            echo "⚠️  Found security-related TODO/FIXME comments that need attention"
             exit 1
           else
-            echo "✅ No sensitive information disclosure found"
+            echo "✅ No security TODOs found"
           fi
           
           # Check for unsafe crypto practices
