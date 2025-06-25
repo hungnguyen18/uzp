@@ -1,0 +1,308 @@
+name: PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  pull_request_review:
+    types: [submitted]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  automated-review:
+    name: Automated PR Review
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+      
+      - name: Get PR Info
+        id: pr-info
+        run: |
+          echo "pr_number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          echo "pr_title=${{ github.event.pull_request.title }}" >> $GITHUB_OUTPUT
+          echo "pr_author=${{ github.event.pull_request.user.login }}" >> $GITHUB_OUTPUT
+          echo "base_ref=${{ github.event.pull_request.base.ref }}" >> $GITHUB_OUTPUT
+          echo "head_ref=${{ github.event.pull_request.head.ref }}" >> $GITHUB_OUTPUT
+      
+      - name: Analyze PR Changes
+        id: analyze-changes
+        run: |
+          # Get list of changed files
+          git diff --name-only origin/${{ steps.pr-info.outputs.base_ref }}...HEAD > changed_files.txt
+          
+          # Categorize changes
+          security_files=$(grep -E "(crypto|security|vault|storage)" changed_files.txt || echo "")
+          go_files=$(grep "\.go$" changed_files.txt || echo "")
+          doc_files=$(grep -E "\.(md|txt)$" changed_files.txt || echo "")
+          workflow_files=$(grep "\.github/" changed_files.txt || echo "")
+          
+          echo "security_changes=${security_files}" >> $GITHUB_OUTPUT
+          echo "go_changes=${go_files}" >> $GITHUB_OUTPUT  
+          echo "doc_changes=${doc_files}" >> $GITHUB_OUTPUT
+          echo "workflow_changes=${workflow_files}" >> $GITHUB_OUTPUT
+          
+          # Count changes
+          total_files=$(wc -l < changed_files.txt)
+          echo "total_files=${total_files}" >> $GITHUB_OUTPUT
+      
+      - name: Security-Focused Review
+        if: steps.analyze-changes.outputs.security_changes != ''
+        run: |
+          echo "🔒 Security-related changes detected!"
+          echo "Files: ${{ steps.analyze-changes.outputs.security_changes }}"
+          
+          # Check for potential security issues
+          security_issues=""
+          
+          # Check for hardcoded secrets
+          if grep -r "password.*=.*[\"']" --include="*.go" .; then
+            security_issues="${security_issues}\n- ⚠️ Potential hardcoded password found"
+          fi
+          
+          # Check for weak crypto
+          if grep -r "md5\|sha1" --include="*.go" .; then
+            security_issues="${security_issues}\n- ⚠️ Weak cryptographic algorithm detected"
+          fi
+          
+          # Check for missing error handling
+          if grep -r "err.*:=.*;" --include="*.go" . | grep -v "if.*err"; then
+            security_issues="${security_issues}\n- ⚠️ Potential unchecked errors found"
+          fi
+          
+          echo "security_issues=${security_issues}" >> $GITHUB_OUTPUT
+        id: security-check
+      
+      - name: Code Quality Check
+        if: steps.analyze-changes.outputs.go_changes != ''
+        run: |
+          echo "📝 Go code changes detected!"
+          
+          quality_issues=""
+          
+          # Check for TODO/FIXME comments
+          if grep -r "TODO\|FIXME\|XXX" --include="*.go" .; then
+            quality_issues="${quality_issues}\n- 📋 TODO/FIXME comments found - consider addressing"
+          fi
+          
+          # Check for print statements (potential debug code)
+          if grep -r "fmt\.Print.*)" --include="*.go" . | grep -v "cmd/"; then
+            quality_issues="${quality_issues}\n- 🐛 Debug print statements found outside CLI commands"
+          fi
+          
+          # Check for missing comments on exported functions
+          uncommented_exports=$(grep -r "^func [A-Z]" --include="*.go" . | grep -v "\.go://")
+          if [ -n "$uncommented_exports" ]; then
+            quality_issues="${quality_issues}\n- 📚 Exported functions without comments found"
+          fi
+          
+          echo "quality_issues=${quality_issues}" >> $GITHUB_OUTPUT
+        id: quality-check
+      
+      - name: PR Checklist Validation
+        id: checklist-validation
+        run: |
+          pr_body="${{ github.event.pull_request.body }}"
+          checklist_issues=""
+          
+          # Check if security checklist is completed
+          if [[ "${{ steps.analyze-changes.outputs.security_changes }}" != "" ]]; then
+            if ! echo "$pr_body" | grep -q "\\[x\\].*security"; then
+              checklist_issues="${checklist_issues}\n- ❌ Security checklist not completed"
+            fi
+          fi
+          
+          # Check if testing checklist is completed  
+          if [[ "${{ steps.analyze-changes.outputs.go_changes }}" != "" ]]; then
+            if ! echo "$pr_body" | grep -q "\\[x\\].*test"; then
+              checklist_issues="${checklist_issues}\n- ❌ Testing checklist not completed"
+            fi
+          fi
+          
+          echo "checklist_issues=${checklist_issues}" >> $GITHUB_OUTPUT
+      
+      - name: Generate Review Comment
+        id: generate-comment
+        run: |
+          comment="## 🤖 Automated PR Review\n\n"
+          comment="${comment}**PR Summary:**\n"
+          comment="${comment}- 📊 **Files changed:** ${{ steps.analyze-changes.outputs.total_files }}\n"
+          comment="${comment}- 👤 **Author:** @${{ steps.pr-info.outputs.pr_author }}\n"
+          comment="${comment}- 🌿 **Branch:** \`${{ steps.pr-info.outputs.head_ref }}\` → \`${{ steps.pr-info.outputs.base_ref }}\`\n\n"
+          
+          # Security section
+          if [[ "${{ steps.analyze-changes.outputs.security_changes }}" != "" ]]; then
+            comment="${comment}### 🔒 Security Review\n"
+            comment="${comment}**Security-related files changed:**\n\`\`\`\n${{ steps.analyze-changes.outputs.security_changes }}\n\`\`\`\n"
+            
+            if [[ "${{ steps.security-check.outputs.security_issues }}" != "" ]]; then
+              comment="${comment}**⚠️ Security Issues Found:**\n${{ steps.security-check.outputs.security_issues }}\n\n"
+            else
+              comment="${comment}**✅ No obvious security issues detected**\n\n"
+            fi
+          fi
+          
+          # Code quality section
+          if [[ "${{ steps.analyze-changes.outputs.go_changes }}" != "" ]]; then
+            comment="${comment}### 📝 Code Quality Review\n"
+            
+            if [[ "${{ steps.quality-check.outputs.quality_issues }}" != "" ]]; then
+              comment="${comment}**📋 Quality Suggestions:**\n${{ steps.quality-check.outputs.quality_issues }}\n\n"
+            else
+              comment="${comment}**✅ Code quality looks good**\n\n"
+            fi
+          fi
+          
+          # Checklist validation
+          if [[ "${{ steps.checklist-validation.outputs.checklist_issues }}" != "" ]]; then
+            comment="${comment}### ❌ Checklist Issues\n${{ steps.checklist-validation.outputs.checklist_issues }}\n\n"
+          fi
+          
+          # Documentation changes
+          if [[ "${{ steps.analyze-changes.outputs.doc_changes }}" != "" ]]; then
+            comment="${comment}### 📚 Documentation Changes\n"
+            comment="${comment}**Files updated:**\n\`\`\`\n${{ steps.analyze-changes.outputs.doc_changes }}\n\`\`\`\n\n"
+          fi
+          
+          # Workflow changes
+          if [[ "${{ steps.analyze-changes.outputs.workflow_changes }}" != "" ]]; then
+            comment="${comment}### ⚙️ Workflow Changes\n"
+            comment="${comment}**⚠️ CI/CD workflows modified - requires owner review**\n\n"
+          fi
+          
+          # Final recommendations
+          comment="${comment}### 🎯 Next Steps\n"
+          if [[ "${{ steps.analyze-changes.outputs.security_changes }}" != "" ]]; then
+            comment="${comment}- 👑 **Owner review required** for security changes\n"
+          fi
+          comment="${comment}- ✅ Ensure all CI checks pass\n"
+          comment="${comment}- 📝 Update tests if needed\n"
+          comment="${comment}- 📚 Update documentation if required\n\n"
+          
+          comment="${comment}---\n*🤖 This review was generated automatically. For questions, mention @${{ github.repository_owner }}*"
+          
+          # Save comment to file for posting
+          echo -e "$comment" > review_comment.md
+      
+      - name: Post Review Comment
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const comment = fs.readFileSync('review_comment.md', 'utf8');
+            
+            // Check if automated review comment already exists
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.login === 'github-actions[bot]' && 
+              comment.body.includes('🤖 Automated PR Review')
+            );
+            
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: comment
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: comment
+              });
+            }
+
+  request-copilot-review:
+    name: Request GitHub Copilot Review
+    runs-on: ubuntu-latest
+    if: github.event.action == 'opened' || github.event.action == 'synchronize'
+    
+    steps:
+      - name: Request Copilot Review
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // Request GitHub Copilot review for the PR
+            try {
+              const { data: review } = await github.rest.pulls.createReview({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.issue.number,
+                event: 'COMMENT',
+                body: `@github-copilot review this PR focusing on:
+                
+                🔒 **Security considerations** (especially for password manager code)
+                📝 **Code quality and best practices** 
+                🧪 **Test coverage and edge cases**
+                📚 **Documentation accuracy**
+                ⚡ **Performance implications**
+                
+                Please provide specific suggestions for improvement.`
+              });
+              
+              console.log('✅ Copilot review requested');
+            } catch (error) {
+              console.log('ℹ️ Copilot review request failed (this is normal if Copilot is not available):', error.message);
+            }
+
+  security-gate:
+    name: Security Gate Check
+    runs-on: ubuntu-latest
+    if: contains(github.event.pull_request.changed_files, 'internal/crypto/') || contains(github.event.pull_request.changed_files, 'internal/storage/')
+    
+    steps:
+      - name: Block security changes without owner approval
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // Check if PR author is the owner
+            const isOwner = context.payload.pull_request.user.login === context.repo.owner;
+            
+            if (!isOwner) {
+              // Add security review label
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: ['security-review-required', 'needs-owner-review']
+              });
+              
+              // Post security gate comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: `## 🔒 Security Gate Activated
+                
+                This PR modifies security-critical code and requires owner review before merging.
+                
+                **Security files changed:**
+                - Files in \`internal/crypto/\` or \`internal/storage/\`
+                
+                **Next steps:**
+                1. ✅ Automated security checks will run
+                2. 👑 @${context.repo.owner} will review security implications
+                3. 🔍 Manual security testing may be required
+                
+                **⚠️ This PR cannot be merged until owner approval is received.**`
+              });
+            } 

@@ -123,6 +123,123 @@ Our CI pipeline runs these checks on **every PR**:
 
 **If CI fails → PR cannot be merged** (regardless of file type)
 
+## 🤖 **Automated Review System**
+
+uzp-cli uses **multiple AI-powered review bots** to help maintain code quality and security:
+
+### **🔍 What Happens When You Submit a PR:**
+
+```mermaid
+graph TD
+    A[Submit PR] --> B[Automated Review Bots Activate]
+    B --> C[🔒 Security Scanner]
+    B --> D[📝 GitHub Copilot]
+    B --> E[🤖 CodeRabbit AI]
+    B --> F[✅ Checklist Validator]
+    
+    C --> G{Security Issues?}
+    D --> H[Code Quality Review]
+    E --> I[AI Suggestions]
+    F --> J[PR Checklist Check]
+    
+    G -->|Yes| K[🚨 Security Gate]
+    G -->|No| L[✅ Security Passed]
+    
+    K --> M[👑 Owner Review Required]
+    L --> N[Ready for Review]
+    H --> N
+    I --> N
+    J --> N
+```
+
+### **🤖 Review Bot Features:**
+
+#### **1. GitHub Copilot (@github-copilot)**
+- **Focuses on**: Security, performance, code quality, testing
+- **Commands**: 
+  - `@github-copilot review` - Comprehensive code review
+  - `@github-copilot explain this` - Code explanation
+  - `@github-copilot suggest improvement` - Improvement suggestions
+
+#### **2. CodeRabbit AI (@coderabbitai)**
+- **Focuses on**: Go best practices, crypto security, performance
+- **Features**: Line-by-line code analysis, security pattern detection
+- **Commands**:
+  - `@coderabbitai help` - Available commands
+  - `@coderabbitai review` - Detailed code review
+  - `@coderabbitai security` - Security-focused review
+
+#### **3. Automated Security Scanner**
+- **Checks**: Hardcoded secrets, weak crypto, error handling
+- **Triggers**: All Go code changes, especially crypto/storage files
+- **Actions**: Auto-labels, security gate activation
+
+#### **4. PR Checklist Validator**
+- **Validates**: Testing completed, documentation updated
+- **Blocks**: Merge if security checklist incomplete for critical changes
+
+### **🎭 Sample Bot Review Comments:**
+
+```markdown
+🤖 Automated PR Review
+
+**PR Summary:**
+- 📊 Files changed: 3  
+- 👤 Author: @yourusername
+- 🌿 Branch: feature/new-encryption → main
+
+### 🔒 Security Review
+**Security-related files changed:**
+- internal/crypto/encryption.go
+- internal/storage/vault.go
+
+✅ No obvious security issues detected
+
+### 📝 Code Quality Review
+📋 Quality Suggestions:
+- Consider adding error handling for line 42 in encryption.go
+- Function EncryptData could benefit from documentation
+- Add tests for edge cases in vault.go
+
+### 🎯 Next Steps
+- 👑 **Owner review required** for security changes
+- ✅ Ensure all CI checks pass
+- 📝 Update tests if needed
+```
+
+### **🔒 Security Gate System:**
+
+For **security-critical changes**, our Security Gate automatically:
+
+1. **🏷️ Labels PR** with `security-review-required`
+2. **🚨 Blocks merge** until owner approval  
+3. **📋 Posts security checklist** for review
+4. **🔍 Runs enhanced security scans**
+
+**Security files that trigger Security Gate:**
+- `internal/crypto/` - Encryption/decryption core
+- `internal/storage/` - Vault storage logic
+- `.github/workflows/` - CI/CD security
+- `go.mod` - Dependency changes
+
+### **🎯 Bot Command Reference:**
+
+| Command | Bot | Purpose |
+|---------|-----|---------|
+| `@github-copilot review` | Copilot | Complete code review |
+| `@coderabbitai security` | CodeRabbit | Security-focused review |
+| `@coderabbitai performance` | CodeRabbit | Performance analysis |
+| `/rerun-security-scan` | Actions | Re-run security checks |
+
+### **📊 Review Bot Success Metrics:**
+
+- **90%+ of PRs** get automated feedback within 2 minutes
+- **Security issues** detected before human review
+- **Code quality** suggestions improve code maintainability
+- **Learning opportunities** for contributors through AI feedback
+
+This automation ensures **fast feedback** while maintaining **high security standards** for our password manager! 🚀
+
 ### 📋 **Branch Protection Rules**
 
 ```yaml

@@ -1,0 +1,190 @@
+# CodeRabbit AI Review Configuration
+# https://coderabbit.ai
+
+# Review settings
+reviews:
+  # Enable for all file types
+  enable: true
+  
+  # Focus areas for uzp-cli (password manager)
+  focus_areas:
+    - security
+    - performance
+    - maintainability
+    - testing
+    - documentation
+    
+  # Severity levels for different issues
+  severity:
+    security: high
+    performance: medium
+    style: low
+    
+  # Request detailed explanations
+  detailed_feedback: true
+  
+  # Include improvement suggestions
+  improvement_suggestions: true
+
+# Language-specific settings
+languages:
+  go:
+    # Go-specific review rules
+    rules:
+      - check_error_handling
+      - check_context_usage
+      - check_goroutine_leaks
+      - check_race_conditions
+      - check_memory_leaks
+      - check_crypto_usage
+      - check_input_validation
+      
+    # Security focus for Go
+    security_focus:
+      - crypto_best_practices
+      - input_sanitization
+      - error_information_disclosure
+      - resource_leaks
+      - concurrent_access
+      
+    # Performance checks
+    performance_focus:
+      - memory_allocation
+      - cpu_usage
+      - io_operations
+      - algorithm_complexity
+
+# File-specific settings
+file_patterns:
+  "internal/crypto/**":
+    # Extra security scrutiny for crypto code
+    security_level: maximum
+    review_depth: deep
+    require_tests: true
+    
+  "internal/storage/**":
+    # Extra security for storage/vault code
+    security_level: maximum
+    review_depth: deep
+    require_tests: true
+    check_data_integrity: true
+    
+  "cmd/**":
+    # CLI command review
+    check_user_input: true
+    check_error_messages: true
+    usability_review: true
+    
+  "**/*_test.go":
+    # Test file review
+    check_test_coverage: true
+    check_test_quality: true
+    check_edge_cases: true
+
+# Security-specific settings
+security:
+  # Critical security patterns to check
+  patterns:
+    - hardcoded_secrets
+    - weak_crypto
+    - sql_injection
+    - path_traversal
+    - insecure_random
+    - timing_attacks
+    - information_disclosure
+    
+  # Crypto-specific checks for password manager
+  crypto_checks:
+    - aes_usage
+    - key_derivation
+    - salt_usage
+    - iv_generation
+    - constant_time_comparison
+    
+  # Input validation checks
+  input_validation:
+    - user_input_sanitization
+    - file_path_validation
+    - command_injection
+    - buffer_overflows
+
+# Comment style preferences
+comments:
+  style: conversational
+  include_code_snippets: true
+  include_links: true
+  tone: helpful
+  
+  # Custom messages for uzp-cli
+  custom_messages:
+    security_issue: |
+      🔒 **Security Concern**: This change affects security-critical code in a password manager. 
+      Please ensure proper testing and consider security implications.
+      
+    crypto_change: |
+      🔐 **Cryptography Change**: Changes to cryptographic code require extra careful review.
+      Verify algorithm choice, key handling, and constant-time operations.
+      
+    storage_change: |
+      💾 **Storage Change**: Changes to vault storage affect data integrity and security.
+      Ensure proper encryption, error handling, and data validation.
+
+# Auto-merge settings (DISABLED for security)
+auto_merge:
+  enable: false  # Never auto-merge for security-critical password manager
+
+# Notification settings
+notifications:
+  # Notify on critical issues
+  critical_issues: true
+  security_issues: true
+  
+  # Summary reports
+  weekly_summary: true
+  
+# Integration settings
+integrations:
+  github:
+    # PR comment settings
+    comment_on_pr: true
+    update_existing_comments: true
+    
+    # Review request behavior
+    request_review_on_issues: true
+    
+    # Label management
+    add_labels: true
+    labels:
+      security_issue: "bot: security-alert"
+      performance_issue: "bot: issues-found"
+      approved: "bot: approved"
+      needs_attention: "needs-human-review"
+
+# Custom rules for password manager
+custom_rules:
+  - name: "Check master password handling"
+    pattern: "master.*password|password.*master"
+    severity: high
+    message: "Ensure master password is handled securely (no logging, proper zeroing)"
+    
+  - name: "Check clipboard security"
+    pattern: "clipboard|copy|paste"
+    severity: medium
+    message: "Verify clipboard operations are secure and temporary"
+    
+  - name: "Check file permissions"
+    pattern: "os\\.Create|os\\.OpenFile|ioutil\\.WriteFile"
+    severity: high
+    message: "Ensure vault files have restrictive permissions (0600)"
+    
+  - name: "Check error information leakage"
+    pattern: "fmt\\.Printf|log\\.|panic"
+    severity: medium
+    message: "Verify error messages don't leak sensitive information"
+
+# Ignore patterns (files to skip review)
+ignore:
+  - "**/*.md"      # Skip markdown files (unless documentation review requested)
+  - "**/vendor/**" # Skip vendor dependencies
+  - "**/*.json"    # Skip JSON config files
+  - "scripts/**"   # Skip build scripts (unless they change) 
