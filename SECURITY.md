@@ -32,7 +32,7 @@ UZP-CLI implements multiple layers of security:
 ## Reporting Security Vulnerabilities
 
 ### Quick Report
-For urgent security issues, please email: **security@hungnguyen.dev**
+For urgent security issues, please email: **hungnguyen18.dev@gmail.com**
 
 ### Detailed Process
 
@@ -40,7 +40,7 @@ For urgent security issues, please email: **security@hungnguyen.dev**
 2. **DO** use GitHub's Private Security Advisory feature:
    - Go to: https://github.com/hungnguyen18/uzp-cli/security/advisories
    - Click "Report a vulnerability"
-3. **Alternatively**, email: security@hungnguyen.dev with:
+3. **Alternatively**, email: hungnguyen18.dev@gmail.com with:
    - Subject: `[SECURITY] UZP-CLI Vulnerability Report`
    - Detailed description of the vulnerability
    - Steps to reproduce
