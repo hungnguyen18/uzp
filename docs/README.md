@@ -4,8 +4,10 @@ This directory contains internal documentation for maintainers and developers.
 
 ## Files
 
-- **[DESIGN.md](./DESIGN.md)** - Project design specification and technical architecture (Vietnamese)
-- **[PUBLISHING.md](./PUBLISHING.md)** - Release and publishing procedures for maintainers
+- 📦 **[RELEASE.md](./RELEASE.md)** - **Automated release process** (one-command releases)
+- 🏗️ **[DESIGN.md](./DESIGN.md)** - Project design specification and technical architecture (Vietnamese)  
+- 📋 **[PUBLISHING.md](./PUBLISHING.md)** - Manual release and publishing procedures (legacy)
+- 🤖 **[AUTOMATED_REVIEW_SETUP.md](./AUTOMATED_REVIEW_SETUP.md)** - Setup for automated code review
 
 ## For Contributors
 

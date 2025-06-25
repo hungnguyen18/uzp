@@ -247,6 +247,29 @@ UZP-CLI handles sensitive data, so security is critical:
 
 ## 🚀 Release Process
 
+### Automated Release (For Maintainers)
+
+**📦 Super easy one-command release:**
+```bash
+# Release version 1.0.7
+./scripts/release.sh 1.0.7
+
+# Or using npm script
+npm run release 1.0.7
+```
+
+**What happens automatically:**
+1. 🔄 Updates `package.json` version
+2. 📝 Commits version change  
+3. 🏷️ Creates and pushes git tag
+4. 🤖 **GitHub Actions triggers and:**
+   - 🔨 Builds cross-platform binaries
+   - 📦 Creates GitHub release with auto-generated description
+   - 📤 Uploads binaries to release assets
+   - 🚀 Publishes to NPM
+
+**That's it!** ✨ Everything else is automated.
+
 ### When Your Contribution Gets Released
 
 | Type | Release Timeline |
@@ -260,6 +283,11 @@ UZP-CLI handles sensitive data, so security is critical:
 - `v1.0.1` - Patch (bug fixes)
 - `v1.1.0` - Minor (new features)
 - `v2.0.0` - Major (breaking changes)
+
+### Release Requirements
+- Only authorized users (`hungnguyen18`) can trigger releases
+- `package.json` version must match git tag version
+- All CI tests must pass before NPM publish
 
 ---
 
@@ -326,4 +354,7 @@ Every contribution, big or small, helps make UZP-CLI better and more secure for 
 
 ---
 
-*For detailed technical guidelines, see our [docs/](docs/) directory.*
+*For detailed guidelines, see our [docs/](docs/) directory:*
+- 📦 **[Release Process](docs/RELEASE.md)** - Automated release guide
+- 🏗️ **[Architecture](docs/DESIGN.md)** - Project design and structure  
+- 📋 **[Publishing](docs/PUBLISHING.md)** - Manual publishing guide

@@ -39,7 +39,8 @@
     "build": "./scripts/build.sh",
     "build-release": "./scripts/build.sh $npm_package_version",
     "pack-test": "npm pack",
-    "test-install": "npm install -g ./uzp-cli-$npm_package_version.tgz"
+    "test-install": "npm install -g ./uzp-cli-$npm_package_version.tgz",
+    "release": "./scripts/release.sh"
   },
   "engines": {
     "node": ">=12.0.0"

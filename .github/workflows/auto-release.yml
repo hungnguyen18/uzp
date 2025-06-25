@@ -1,0 +1,256 @@
+name: Auto Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # Triggers on any tag starting with 'v' (e.g., v1.0.7)
+
+jobs:
+  authorization-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check authorized user
+        run: |
+          AUTHORIZED_USERS=("hungnguyen18")
+          CURRENT_USER="${{ github.actor }}"
+          
+          echo "🔍 Checking authorization for user: $CURRENT_USER"
+          
+          if [[ " ${AUTHORIZED_USERS[@]} " =~ " ${CURRENT_USER} " ]]; then
+            echo "✅ User $CURRENT_USER is authorized for release"
+          else
+            echo "❌ User $CURRENT_USER is NOT authorized for release"
+            echo "📋 Authorized users: ${AUTHORIZED_USERS[*]}"
+            exit 1
+          fi
+
+  build-binaries:
+    runs-on: ubuntu-latest
+    needs: authorization-check
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-go@v4
+        with:
+          go-version: '1.23.10'
+      
+      - name: Get version from tag
+        id: get-version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "📦 Building version: $VERSION"
+      
+      - name: Build cross-platform binaries
+        run: |
+          VERSION="${{ steps.get-version.outputs.version }}"
+          ./scripts/build.sh $VERSION
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: uzp-binaries
+          path: build/
+          retention-days: 1
+
+  create-release:
+    runs-on: ubuntu-latest
+    needs: [authorization-check, build-binaries]
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch full history for changelog
+      
+      - name: Download binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: uzp-binaries
+          path: build/
+      
+      - name: Generate release notes
+        id: release-notes
+        run: |
+          VERSION="${{ needs.build-binaries.outputs.version }}"
+          
+          # Get previous tag
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+          
+          # Generate changelog
+          if [ -n "$PREV_TAG" ]; then
+            echo "## 🆕 What's New" > changelog.md
+            echo "" >> changelog.md
+            
+            # Get commits since last tag
+            git log $PREV_TAG..HEAD --pretty=format:"- %s" --no-merges | head -20 >> changelog.md
+            echo "" >> changelog.md
+            echo "" >> changelog.md
+          fi
+          
+          cat << EOF >> changelog.md
+          ## 📦 Installation
+          
+          ### NPM (Recommended)
+          \`\`\`bash
+          npm install -g uzp-cli
+          \`\`\`
+          
+          ### Direct Download
+          Download the appropriate binary for your platform from the assets below.
+          
+          ## 🚀 Quick Start
+          \`\`\`bash
+          uzp init
+          uzp add
+          uzp inject -p myapp > .env
+          \`\`\`
+          
+          ## ✨ Features
+          - 🔐 AES-256-GCM encryption
+          - 🔄 Auto-unlock workflow
+          - 📄 Environment file export (.env)
+          - 📋 Clipboard integration
+          - 🔍 Search functionality
+          
+          ## 🖥️ Platform Support
+          - **macOS**: Intel (x64) & Apple Silicon (ARM64)
+          - **Linux**: x64 & ARM64
+          - **Windows**: x64 & ARM64
+          
+          ## 🔗 Links
+          - 📖 [Documentation](https://github.com/hungnguyen18/uzp-cli#readme)
+          - 🐛 [Report Issues](https://github.com/hungnguyen18/uzp-cli/issues)
+          - 💬 [Discussions](https://github.com/hungnguyen18/uzp-cli/discussions)
+          EOF
+          
+          echo "Release notes generated:"
+          cat changelog.md
+      
+      - name: Create GitHub Release
+        id: create-release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ needs.build-binaries.outputs.version }}
+          name: "UZP v${{ needs.build-binaries.outputs.version }} - User's Zecure Pocket"
+          body_path: changelog.md
+          files: build/*
+          draft: false
+          prerelease: false
+      
+      - name: Verify binaries uploaded
+        run: |
+          echo "✅ Release created with binaries automatically uploaded!"
+          ls -la build/
+
+  publish-npm:
+    runs-on: ubuntu-latest
+    needs: [authorization-check, build-binaries, create-release]
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          registry-url: 'https://registry.npmjs.org'
+      
+      - name: Verify package version matches tag
+        run: |
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          TAG_VERSION="${{ needs.build-binaries.outputs.version }}"
+          
+          echo "📦 Package version: $PACKAGE_VERSION"
+          echo "🏷️  Tag version: $TAG_VERSION"
+          
+          if [ "$PACKAGE_VERSION" != "$TAG_VERSION" ]; then
+            echo "❌ Version mismatch! Package version ($PACKAGE_VERSION) doesn't match tag version ($TAG_VERSION)"
+            echo "💡 Please update package.json version to match the tag"
+            exit 1
+          fi
+          
+          echo "✅ Version match confirmed"
+      
+      - name: Check if version exists on NPM
+        id: check-npm
+        run: |
+          VERSION="${{ needs.build-binaries.outputs.version }}"
+          if npm view uzp-cli@$VERSION version 2>/dev/null; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "⚠️ Version $VERSION already exists on NPM"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "✅ Version $VERSION does not exist on NPM"
+          fi
+      
+      - name: Install dependencies
+        if: steps.check-npm.outputs.exists == 'false'
+        run: npm install --ignore-scripts
+      
+      - name: Publish to NPM
+        if: steps.check-npm.outputs.exists == 'false'
+        run: |
+          echo "🚀 Publishing uzp-cli@${{ needs.build-binaries.outputs.version }} to NPM..."
+          
+          if npm publish --access public; then
+            echo "✅ Successfully published to NPM!"
+            echo "🔗 Package: https://www.npmjs.com/package/uzp-cli"
+          else
+            echo "❌ Failed to publish to NPM"
+            exit 1
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      
+      - name: Skip NPM publish
+        if: steps.check-npm.outputs.exists == 'true'
+        run: |
+          echo "⏭️ Skipping NPM publish - version ${{ needs.build-binaries.outputs.version }} already exists"
+
+  summary:
+    runs-on: ubuntu-latest
+    needs: [authorization-check, build-binaries, create-release, publish-npm]
+    if: always() && needs.authorization-check.result == 'success'
+    steps:
+      - name: Release Summary
+        run: |
+          VERSION="${{ needs.build-binaries.outputs.version }}"
+          
+          echo "## 🎉 Release Summary - UZP v$VERSION" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Status | Link |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|------|" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.build-binaries.result }}" = "success" ]; then
+            echo "| 🔨 Build Binaries | ✅ Success | - |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| 🔨 Build Binaries | ❌ Failed | - |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ needs.create-release.result }}" = "success" ]; then
+            echo "| 📦 GitHub Release | ✅ Created | [v$VERSION](https://github.com/hungnguyen18/uzp-cli/releases/tag/v$VERSION) |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| 📦 GitHub Release | ❌ Failed | - |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ needs.publish-npm.result }}" = "success" ]; then
+            echo "| 📡 NPM Publish | ✅ Published | [uzp-cli@$VERSION](https://www.npmjs.com/package/uzp-cli) |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| 📡 NPM Publish | ❌ Failed | - |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🚀 Installation" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "npm install -g uzp-cli@$VERSION" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔗 Quick Links" >> $GITHUB_STEP_SUMMARY
+          echo "- 📖 [Release Notes](https://github.com/hungnguyen18/uzp-cli/releases/tag/v$VERSION)" >> $GITHUB_STEP_SUMMARY
+          echo "- 📦 [NPM Package](https://www.npmjs.com/package/uzp-cli)" >> $GITHUB_STEP_SUMMARY
+          echo "- 📚 [Documentation](https://github.com/hungnguyen18/uzp-cli#readme)" >> $GITHUB_STEP_SUMMARY 
