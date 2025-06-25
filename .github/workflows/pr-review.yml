@@ -138,7 +138,7 @@ jobs:
           comment="${comment}**PR Summary:**\n"
           comment="${comment}- 📊 **Files changed:** ${{ steps.analyze-changes.outputs.total_files }}\n"
           comment="${comment}- 👤 **Author:** @${{ steps.pr-info.outputs.pr_author }}\n"
-          comment="${comment}- 🌿 **Branch:** \`${{ steps.pr-info.outputs.head_ref }}\` → \`${{ steps.pr-info.outputs.base_ref }}\`\n\n"
+          comment="${comment}- 🌿 **Branch:** \`$HEAD_REF\` → \`${{ steps.pr-info.outputs.base_ref }}\`\n\n"
           
           # Security section
           if [[ "${{ steps.analyze-changes.outputs.security_changes }}" != "" ]]; then
