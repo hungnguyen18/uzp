@@ -34,7 +34,6 @@ OPTIONS:
   --ttl  Seconds before clipboard is cleared (default: 15)`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// Check if vault is unlocked, auto-unlock if needed
 		if !vault.IsUnlocked() {
 			fmt.Fprint(os.Stderr, "Enter master password: ")
 			password, err := term.ReadPassword(int(syscall.Stdin))
@@ -47,13 +46,11 @@ OPTIONS:
 				return fmt.Errorf("invalid password")
 			}
 
-			// Clear password from memory
 			for i := range password {
 				password[i] = 0
 			}
 		}
 
-		// Parse project/key
 		parts := strings.Split(args[0], "/")
 		if len(parts) != 2 {
 			return fmt.Errorf("invalid format. Use: project/key")
@@ -62,13 +59,11 @@ OPTIONS:
 		project := parts[0]
 		key := parts[1]
 
-		// Get value
 		value, err := vault.Get(project, key)
 		if err != nil {
 			return err
 		}
 
-		// Copy to clipboard
 		duration := time.Duration(ttl) * time.Second
 		if err := utils.CopyToClipboard(value, duration); err != nil {
 			return err
