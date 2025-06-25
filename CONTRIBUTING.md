@@ -125,61 +125,52 @@ Our CI pipeline runs these checks on **every PR**:
 
 ## 🤖 **Automated Review System**
 
-uzp-cli uses **multiple AI-powered review bots** to help maintain code quality and security:
+uzp-cli uses **GitHub Copilot and automated security scanning** to help maintain code quality and security:
 
 ### **🔍 What Happens When You Submit a PR:**
 
 ```mermaid
 graph TD
-    A[Submit PR] --> B[Automated Review Bots Activate]
+    A[Submit PR] --> B[Automated Review System Activates]
     B --> C[🔒 Security Scanner]
     B --> D[📝 GitHub Copilot]
-    B --> E[🤖 CodeRabbit AI]
-    B --> F[✅ Checklist Validator]
+    B --> E[✅ Checklist Validator]
     
-    C --> G{Security Issues?}
-    D --> H[Code Quality Review]
-    E --> I[AI Suggestions]
-    F --> J[PR Checklist Check]
+    C --> F{Security Issues?}
+    D --> G[Code Quality Review]
+    E --> H[PR Checklist Check]
     
-    G -->|Yes| K[🚨 Security Gate]
-    G -->|No| L[✅ Security Passed]
+    F -->|Yes| I[🚨 Security Gate]
+    F -->|No| J[✅ Security Passed]
     
-    K --> M[👑 Owner Review Required]
-    L --> N[Ready for Review]
-    H --> N
-    I --> N
-    J --> N
+    I --> K[👑 Owner Review Required]
+    J --> L[Ready for Review]
+    G --> L
+    H --> L
 ```
 
-### **🤖 Review Bot Features:**
+### **🤖 Automated Review Features:**
 
 #### **1. GitHub Copilot (@github-copilot)**
 - **Focuses on**: Security, performance, code quality, testing
+- **What it does**: AI-powered code review with specific suggestions
 - **Commands**: 
   - `@github-copilot review` - Comprehensive code review
   - `@github-copilot explain this` - Code explanation
   - `@github-copilot suggest improvement` - Improvement suggestions
 
-#### **2. CodeRabbit AI (@coderabbitai)**
-- **Focuses on**: Go best practices, crypto security, performance
-- **Features**: Line-by-line code analysis, security pattern detection
-- **Commands**:
-  - `@coderabbitai help` - Available commands
-  - `@coderabbitai review` - Detailed code review
-  - `@coderabbitai security` - Security-focused review
-
-#### **3. Automated Security Scanner**
-- **Checks**: Hardcoded secrets, weak crypto, error handling
+#### **2. Automated Security Scanner**
+- **Checks**: Hardcoded secrets, weak crypto, error handling, vulnerabilities
 - **Triggers**: All Go code changes, especially crypto/storage files
-- **Actions**: Auto-labels, security gate activation
+- **Actions**: Auto-labels, security gate activation, detailed security reports
 
-#### **4. PR Checklist Validator**
-- **Validates**: Testing completed, documentation updated
-- **Blocks**: Merge if security checklist incomplete for critical changes
+#### **3. PR Checklist Validator**
+- **Validates**: Testing completed, documentation updated, security checklist
+- **Blocks**: Merge if critical checklist items incomplete for security changes
 
-### **🎭 Sample Bot Review Comments:**
+### **🎭 Sample Automated Review Comments:**
 
+**GitHub Actions Bot:**
 ```markdown
 🤖 Automated PR Review
 
@@ -207,6 +198,24 @@ graph TD
 - 📝 Update tests if needed
 ```
 
+**GitHub Copilot (when mentioned):**
+```markdown
+@github-copilot review
+
+I've reviewed your PR focusing on security and code quality:
+
+🔒 **Security Analysis:**
+- Line 42: Consider using constant-time comparison for password validation
+- Line 78: Ensure sensitive data is cleared from memory after use
+
+📝 **Code Quality:**
+- Function `EncryptData` could benefit from input validation
+- Consider adding unit tests for error handling edge cases
+
+⚡ **Performance:**
+- Consider caching the derived key if password doesn't change
+```
+
 ### **🔒 Security Gate System:**
 
 For **security-critical changes**, our Security Gate automatically:
@@ -222,23 +231,24 @@ For **security-critical changes**, our Security Gate automatically:
 - `.github/workflows/` - CI/CD security
 - `go.mod` - Dependency changes
 
-### **🎯 Bot Command Reference:**
+### **🎯 Available Commands:**
 
-| Command | Bot | Purpose |
-|---------|-----|---------|
-| `@github-copilot review` | Copilot | Complete code review |
-| `@coderabbitai security` | CodeRabbit | Security-focused review |
-| `@coderabbitai performance` | CodeRabbit | Performance analysis |
-| `/rerun-security-scan` | Actions | Re-run security checks |
+| Command | Purpose |
+|---------|---------|
+| `@github-copilot review` | Complete AI-powered code review |
+| `@github-copilot explain this` | Explain specific code sections |
+| `@github-copilot suggest improvement` | Get improvement suggestions |
+| `/rerun-security-scan` | Re-run automated security checks |
 
-### **📊 Review Bot Success Metrics:**
+### **📊 Automated Review Benefits:**
 
-- **90%+ of PRs** get automated feedback within 2 minutes
-- **Security issues** detected before human review
-- **Code quality** suggestions improve code maintainability
-- **Learning opportunities** for contributors through AI feedback
+- **⚡ Instant feedback** from automated security scanner (< 2 minutes)
+- **🔒 Security issues** detected before human review
+- **🤖 AI-powered suggestions** from GitHub Copilot when requested
+- **📚 Learning opportunities** through detailed code feedback
+- **🚀 Faster PR cycle** with automated checks
 
-This automation ensures **fast feedback** while maintaining **high security standards** for our password manager! 🚀
+This streamlined system ensures **fast feedback** while maintaining **high security standards** for our password manager! 🔒
 
 ### 📋 **Branch Protection Rules**
 

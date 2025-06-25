@@ -6,8 +6,8 @@ This guide is for **repository owners** to set up automated PR review systems fo
 
 ```bash
 # ✅ 1. GitHub Actions workflows are already committed
-# ✅ 2. CodeRabbit configuration is ready
-# ✅ 3. Labels configuration is ready
+# ✅ 2. Labels configuration is ready
+# ✅ 3. GitHub Copilot integration ready
 
 # Run setup workflows:
 ```
@@ -22,15 +22,9 @@ gh workflow run setup-labels.yml
 ### **Step 2: Enable GitHub Copilot (Free for Open Source)**
 1. Go to repository **Settings → Code security and analysis**
 2. Enable **"GitHub Copilot"** for pull requests
-3. Copilot will automatically start reviewing PRs
+3. Copilot will automatically start reviewing PRs when mentioned
 
-### **Step 3: Setup CodeRabbit AI**
-1. Go to [coderabbit.ai](https://coderabbit.ai)
-2. **Sign up with GitHub** (free for open source)
-3. **Install CodeRabbit GitHub App** on your repository
-4. CodeRabbit will automatically detect `.coderabbit.yaml` config
-
-### **Step 4: Configure Branch Protection**
+### **Step 3: Configure Branch Protection**
 ```bash
 # Apply these settings via GitHub web interface:
 # Settings → Branches → Add protection rule for main
@@ -51,7 +45,7 @@ Branch name pattern: main
 ❌ Allow deletions: No
 ```
 
-### **Step 5: Test the System**
+### **Step 4: Test the System**
 ```bash
 # Create a test PR to verify everything works:
 git checkout -b test/automated-review-system
@@ -61,9 +55,9 @@ git push origin test/automated-review-system
 
 # Create PR and check:
 # 1. ✅ Automated review comment appears
-# 2. ✅ CodeRabbit bot comments  
-# 3. ✅ GitHub Copilot can be mentioned
-# 4. ✅ Labels are applied automatically
+# 2. ✅ GitHub Copilot can be mentioned (@github-copilot review)
+# 3. ✅ Labels are applied automatically
+# 4. ✅ Security scanner runs automatically
 ```
 
 ---
@@ -96,45 +90,7 @@ git push origin test/automated-review-system
 - Contributors can mention `@github-copilot review` for manual review
 - Copilot provides security, performance, and quality feedback
 
----
 
-### **CodeRabbit AI Setup**
-
-**Prerequisites:**
-- GitHub repository (public = free, private = paid)
-- Admin access to repository
-
-**Setup Steps:**
-1. **Visit [coderabbit.ai](https://coderabbit.ai)**
-2. **"Get Started"** → **"Sign in with GitHub"**
-3. **Install CodeRabbit GitHub App**:
-   - Select repositories: `uzp-cli` (or all repositories)
-   - Grant permissions for PR review, comments, labels
-4. **Configuration Auto-Detection**:
-   - CodeRabbit will automatically detect `.coderabbit.yaml`
-   - Custom rules for password manager security will be applied
-
-**Verification:**
-```bash
-# Test CodeRabbit is working:
-# 1. Create test PR
-# 2. CodeRabbit should comment within 1-2 minutes
-# 3. Look for @coderabbitai bot comments
-
-# If not working, check:
-# - GitHub App permissions
-# - Repository access in CodeRabbit dashboard
-# - .coderabbit.yaml syntax
-```
-
-**Available Commands:**
-```bash
-@coderabbitai help              # Show available commands
-@coderabbitai review            # Request detailed review
-@coderabbitai security          # Security-focused review
-@coderabbitai performance       # Performance analysis  
-@coderabbitai resolve           # Mark conversation resolved
-```
 
 ---
 
@@ -168,23 +124,6 @@ git push origin test/automated-review-system
 
 ## 🔧 **Advanced Configuration**
 
-### **Custom Security Rules**
-
-Edit `.coderabbit.yaml` to add password manager-specific rules:
-
-```yaml
-custom_rules:
-  - name: "Check master password handling"
-    pattern: "master.*password|password.*master"
-    severity: high
-    message: "Ensure master password is handled securely"
-    
-  - name: "Check memory clearing"
-    pattern: "password|key|secret"
-    severity: medium
-    message: "Verify sensitive data is cleared from memory"
-```
-
 ### **Workflow Customization**
 
 Modify `.github/workflows/pr-review.yml` for your needs:
@@ -213,7 +152,7 @@ const labels = [
 
 ## 🔍 **Monitoring & Maintenance**
 
-### **Check Review Bot Health**
+### **Check Review System Health**
 
 ```bash
 # 1. Monitor workflow runs
@@ -222,11 +161,11 @@ gh run list --workflow=pr-review.yml
 # 2. Check recent PR comments  
 gh pr list --state=all --limit=5
 
-# 3. Verify bot responses
+# 3. Verify system responses
 # Look for comments from:
-# - github-actions[bot]
-# - coderabbit-ai[bot]  
-# - GitHub Copilot mentions
+# - github-actions[bot] (automated review)
+# - GitHub Copilot mentions working
+# - Proper labels applied
 ```
 
 ### **Troubleshooting Common Issues**
@@ -234,7 +173,7 @@ gh pr list --state=all --limit=5
 | Issue | Solution |
 |-------|----------|
 | Copilot not responding | Check repo settings → Copilot enabled |
-| CodeRabbit not commenting | Verify GitHub App permissions |
+| Automated review not running | Check workflow permissions and triggers |
 | Security scan false positives | Update regex patterns in workflow |
 | Labels not applied | Run setup-labels workflow manually |
 
@@ -279,10 +218,18 @@ Track the effectiveness of your automated review system:
 
 After setup is complete:
 
-1. **✅ Create test PR** to verify all systems work
-2. **📚 Update contributor documentation** about new review process
-3. **🔔 Announce to existing contributors** about automated review benefits
-4. **📈 Monitor effectiveness** and gather feedback
-5. **🛠️ Iteratively improve** based on usage patterns
+1. **✅ Create test PR** to verify automated system works
+2. **📚 Announce to contributors** about GitHub Copilot integration
+3. **🔔 Train contributors** on using `@github-copilot` commands
+4. **📈 Monitor automated review effectiveness** and gather feedback
+5. **🛠️ Iteratively improve** security patterns based on usage
 
-**Congratulations!** Your repository now has a comprehensive automated review system that maintains security standards while scaling contributor onboarding! 🚀 
+**Congratulations!** Your repository now has a **streamlined automated review system** with GitHub Copilot that maintains security standards while keeping setup simple! 🚀
+
+### **🎯 Benefits of This Simplified Approach:**
+
+- **🟢 Less complexity** - Only GitHub Copilot + Automated Security Scanner
+- **💰 Zero cost** - GitHub Copilot free for open source
+- **⚡ Faster setup** - No external service integrations required
+- **🔒 Same security** - Comprehensive automated security scanning
+- **🤖 Smart AI** - GitHub Copilot provides excellent code review when needed 
