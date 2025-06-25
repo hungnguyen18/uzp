@@ -44,7 +44,7 @@ STORAGE: ~/.uzp/uzp.vault (encrypted)`,
 				return
 			}
 			// If no subcommand is provided, show help by default
-			cmd.Help()
+			_ = cmd.Help() // Explicitly ignore error as it's unlikely to fail for help display
 		},
 	}
 )
