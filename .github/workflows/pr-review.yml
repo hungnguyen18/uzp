@@ -38,6 +38,8 @@ jobs:
       
       - name: Analyze PR Changes
         id: analyze-changes
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
           # Get list of changed files
           git diff --name-only origin/${{ steps.pr-info.outputs.base_ref }}...$HEAD_REF > changed_files.txt
@@ -112,6 +114,8 @@ jobs:
       
       - name: PR Checklist Validation
         id: checklist-validation
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
         run: |
           checklist_issues=""
           
@@ -133,6 +137,8 @@ jobs:
       
       - name: Generate Review Comment
         id: generate-comment
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
           comment="## 🤖 Automated PR Review\n\n"
           comment="${comment}**PR Summary:**\n"
@@ -243,13 +249,17 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            // Get PR number correctly
+            const prNumber = context.payload.pull_request?.number || context.issue.number;
+            
+            console.log(`Requesting Copilot review for PR #${prNumber}`);
+            
             // Request GitHub Copilot review for the PR
             try {
-              const { data: review } = await github.rest.pulls.createReview({
+              await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                pull_number: context.issue.number,
-                event: 'COMMENT',
+                issue_number: prNumber,
                 body: `@github-copilot review this PR focusing on:
                 
                 🔒 **Security considerations** (especially for password manager code)
@@ -261,9 +271,10 @@ jobs:
                 Please provide specific suggestions for improvement.`
               });
               
-              console.log('✅ Copilot review requested');
+              console.log('✅ Copilot review requested successfully');
             } catch (error) {
-              console.log('ℹ️ Copilot review request failed (this is normal if Copilot is not available):', error.message);
+              console.log('ℹ️ Copilot review request failed:', error.message);
+              console.log('This is normal if Copilot is not enabled for this repository');
             }
 
   security-gate:
@@ -277,6 +288,8 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            const prNumber = context.payload.pull_request?.number || context.issue.number;
+            
             // Check if PR author is the owner
             const isOwner = context.payload.pull_request.user.login === context.repo.owner;
             
@@ -285,7 +298,7 @@ jobs:
               await github.rest.issues.addLabels({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                issue_number: context.issue.number,
+                issue_number: prNumber,
                 labels: ['security-review-required', 'needs-owner-review']
               });
               
@@ -293,7 +306,7 @@ jobs:
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                issue_number: context.issue.number,
+                issue_number: prNumber,
                 body: `## 🔒 Security Gate Activated
                 
                 This PR modifies security-critical code and requires owner review before merging.
@@ -332,18 +345,23 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            // Get PR number correctly
+            const prNumber = context.payload.pull_request?.number || context.issue.number;
+            
+            console.log(`Checking auto-approval eligibility for PR #${prNumber}`);
+            
             // Get PR details
             const { data: pr } = await github.rest.pulls.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              pull_number: context.issue.number
+              pull_number: prNumber
             });
             
             // Get changed files
             const { data: files } = await github.rest.pulls.listFiles({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              pull_number: context.issue.number
+              pull_number: prNumber
             });
             
             const changedFiles = files.map(f => f.filename);
@@ -385,7 +403,7 @@ jobs:
             const { data: reviews } = await github.rest.pulls.listReviews({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              pull_number: context.issue.number
+              pull_number: prNumber
             });
             
             const hasRequestedChanges = reviews.some(review => review.state === 'CHANGES_REQUESTED');
@@ -429,11 +447,13 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            const prNumber = context.payload.pull_request?.number || context.issue.number;
+            
             // Create approval review
             await github.rest.pulls.createReview({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              pull_number: context.issue.number,
+              pull_number: prNumber,
               event: 'APPROVE',
               body: `## 🤖 Automated Approval
               
@@ -455,7 +475,7 @@ jobs:
             await github.rest.issues.addLabels({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.issue.number,
+              issue_number: prNumber,
               labels: ['bot: approved', 'ready-to-merge']
             });
             
@@ -467,12 +487,13 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            const prNumber = context.payload.pull_request?.number || context.issue.number;
             const result = ${{ steps.check-eligibility.outputs.result }};
             
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.issue.number,
+              issue_number: prNumber,
               body: `## 🔍 Manual Review Required
               
               This PR requires manual review because:
