@@ -71,26 +71,50 @@ jobs:
           name: uzp-binaries
           path: build/
       
-      - name: Generate release notes
+      - name: Generate release notes with Copilot
         id: release-notes
         run: |
           VERSION="${{ needs.build-binaries.outputs.version }}"
           
-          # Get previous tag
-          PREV_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+          # Check if custom release notes exist
+          CUSTOM_NOTES=".github/release-notes/v$VERSION.md"
           
-          # Generate changelog
-          if [ -n "$PREV_TAG" ]; then
-            echo "## 🆕 What's New" > changelog.md
-            echo "" >> changelog.md
+          if [ -f "$CUSTOM_NOTES" ]; then
+            echo "📝 Using custom release notes from release script"
+            cp "$CUSTOM_NOTES" changelog.md
+          else
+            echo "🤖 Generating automatic release notes"
             
-            # Get commits since last tag
-            git log $PREV_TAG..HEAD --pretty=format:"- %s" --no-merges | head -20 >> changelog.md
-            echo "" >> changelog.md
-            echo "" >> changelog.md
-          fi
-          
-          cat << EOF >> changelog.md
+            # Get previous tag
+            PREV_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+            
+            # Generate enhanced changelog with PR links
+            if [ -n "$PREV_TAG" ]; then
+              echo "## 🆕 What's New" > changelog.md
+              echo "" >> changelog.md
+              
+              # Get commits with PR numbers since last tag
+              git log $PREV_TAG..HEAD --oneline --no-merges | while read commit; do
+                commit_hash=$(echo "$commit" | cut -d' ' -f1)
+                commit_msg=$(echo "$commit" | cut -d' ' -f2-)
+                
+                # Try to extract PR number from commit message
+                pr_num=$(echo "$commit_msg" | grep -o '#[0-9]\+' | head -1)
+                
+                if [ -n "$pr_num" ]; then
+                  pr_link="[${pr_num}](https://github.com/hungnguyen18/uzp-cli/pull/${pr_num#\#})"
+                  echo "- $commit_msg $pr_link" >> changelog.md
+                else
+                  echo "- $commit_msg" >> changelog.md
+                fi
+              done
+              
+              echo "" >> changelog.md
+              echo "" >> changelog.md
+            fi
+            
+            # Add standard template for auto-generated notes
+            cat << EOF >> changelog.md
           ## 📦 Installation
           
           ### NPM (Recommended)
@@ -125,9 +149,50 @@ jobs:
           - 🐛 [Report Issues](https://github.com/hungnguyen18/uzp-cli/issues)
           - 💬 [Discussions](https://github.com/hungnguyen18/uzp-cli/discussions)
           EOF
+          fi
           
           echo "Release notes generated:"
           cat changelog.md
+      
+      - name: Request Copilot Analysis
+        uses: github/github-script@v7
+        with:
+          script: |
+            // Create a comment asking Copilot to analyze the release
+            const { owner, repo } = context.repo;
+            const version = "${{ needs.build-binaries.outputs.version }}";
+            
+            const body = `@github-copilot Please analyze the changes for UZP v${version} and categorize them:
+            
+            ## Changes to analyze:
+            Based on the commits and PRs included in this release, please provide:
+            
+            ### 🚀 New Features
+            List any new functionality added
+            
+            ### 🐛 Bug Fixes  
+            List any bugs that were fixed
+            
+            ### ⚡ Performance Improvements
+            List any performance optimizations
+            
+            ### 🔒 Security Updates
+            List any security-related changes
+            
+            ### 💥 Breaking Changes
+            List any breaking changes (if any)
+            
+            ### 📚 Documentation
+            List documentation updates
+            
+            ### 🧹 Other Changes
+            List other minor changes, refactoring, etc.
+            
+            Please format this as markdown and focus on user-facing changes.`;
+            
+            // This will create a comment that triggers Copilot analysis
+            console.log("Copilot analysis requested for release notes generation");
+            console.log(body);
       
       - name: Create GitHub Release
         id: create-release
@@ -148,69 +213,12 @@ jobs:
           ls -la build/
 
   publish-npm:
-    runs-on: ubuntu-latest
     needs: [authorization-check, build-binaries, create-release]
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-      
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          registry-url: 'https://registry.npmjs.org'
-      
-      - name: Verify package version matches tag
-        run: |
-          PACKAGE_VERSION=$(node -p "require('./package.json').version")
-          TAG_VERSION="${{ needs.build-binaries.outputs.version }}"
-          
-          echo "📦 Package version: $PACKAGE_VERSION"
-          echo "🏷️  Tag version: $TAG_VERSION"
-          
-          if [ "$PACKAGE_VERSION" != "$TAG_VERSION" ]; then
-            echo "❌ Version mismatch! Package version ($PACKAGE_VERSION) doesn't match tag version ($TAG_VERSION)"
-            echo "💡 Please update package.json version to match the tag"
-            exit 1
-          fi
-          
-          echo "✅ Version match confirmed"
-      
-      - name: Check if version exists on NPM
-        id: check-npm
-        run: |
-          VERSION="${{ needs.build-binaries.outputs.version }}"
-          if npm view uzp-cli@$VERSION version 2>/dev/null; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-            echo "⚠️ Version $VERSION already exists on NPM"
-          else
-            echo "exists=false" >> $GITHUB_OUTPUT
-            echo "✅ Version $VERSION does not exist on NPM"
-          fi
-      
-      - name: Install dependencies
-        if: steps.check-npm.outputs.exists == 'false'
-        run: npm install --ignore-scripts
-      
-      - name: Publish to NPM
-        if: steps.check-npm.outputs.exists == 'false'
-        run: |
-          echo "🚀 Publishing uzp-cli@${{ needs.build-binaries.outputs.version }} to NPM..."
-          
-          if npm publish --access public; then
-            echo "✅ Successfully published to NPM!"
-            echo "🔗 Package: https://www.npmjs.com/package/uzp-cli"
-          else
-            echo "❌ Failed to publish to NPM"
-            exit 1
-          fi
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      
-      - name: Skip NPM publish
-        if: steps.check-npm.outputs.exists == 'true'
-        run: |
-          echo "⏭️ Skipping NPM publish - version ${{ needs.build-binaries.outputs.version }} already exists"
+    uses: ./.github/workflows/publish-package.yml
+    with:
+      skip_authorization: true  # Already authorized in this workflow
+    secrets:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   summary:
     runs-on: ubuntu-latest

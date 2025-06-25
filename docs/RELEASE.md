@@ -12,7 +12,65 @@ This document explains the fully automated release process for UZP CLI.
 npm run release 1.0.7
 ```
 
+**New Features:**
+- 📝 **Interactive Preview** - See and edit release notes before publishing
+- 🔗 **PR Links** - Automatic linking to Pull Requests in changelog
+- 🤖 **Copilot Integration** - AI-powered release notes analysis
+- ✅ **Confirmation Steps** - Review everything before proceeding
+
 **That's it!** 🎉 Everything else is automated by GitHub Actions.
+
+## 🎯 Interactive Release Workflow
+
+### 📝 Preview & Edit Process
+
+When you run the release script, you'll see:
+
+```
+🚀 Generating release notes preview...
+✅ Release notes preview generated!
+
+📋 Release Notes Preview:
+==========================
+# UZP v1.0.7 - User's Zecure Pocket
+
+## 🆕 What's New
+
+Changes since v1.0.6:
+
+- feat: add vault export functionality [#123](https://github.com/hungnguyen18/uzp-cli/pull/123)
+- fix: prevent clipboard memory leak [#124](https://github.com/hungnguyen18/uzp-cli/pull/124)
+- docs: update installation guide
+
+## 📦 Installation
+[... full template ...]
+==========================
+
+🤔 Do you want to edit the release notes? (y/N): y
+🚀 Opening VS Code for editing...
+Press Enter after you finish editing in VS Code...
+✅ Release notes updated!
+
+🚀 Final release notes:
+[... shows your edited version ...]
+
+🚀 Proceed with release v1.0.7? (y/N): y
+```
+
+### 📝 Editing Options
+
+The script will try these editors in order:
+1. **VS Code** (`code`) - Opens in external editor
+2. **Nano** (`nano`) - Terminal-based editor
+3. **Vim** (`vim`) - Advanced terminal editor
+4. **Manual** - Provides file path for manual editing
+
+### 🔗 Automatic Features
+
+- **PR Links**: Automatically detects `#123` in commit messages and links to PRs
+- **Smart Changelog**: Groups commits since last tag
+- **Template**: Includes installation, features, and platform support
+- **Validation**: Confirms everything before proceeding
 
 ## 🔄 What Happens Automatically
 
@@ -26,9 +84,53 @@ npm run release 1.0.7
 
 ### 2. **GitHub Actions** (`.github/workflows/auto-release.yml`)
 - 🔨 **Build**: Cross-platform binaries for all platforms
-- 📦 **Release**: Creates GitHub release with auto-generated description
+- 📦 **Release**: Creates GitHub release with your custom description (or auto-generated)
 - 📤 **Upload**: Binaries attached to release assets
-- 🚀 **Publish**: Package published to NPM automatically
+- 🚀 **Publish**: Reuses existing NPM workflow for reliability
+- 🤖 **Copilot**: Requests AI analysis for enhanced release notes
+
+## 🤖 GitHub Copilot Integration
+
+### Automatic Analysis Request
+
+After the release is created, GitHub Actions will automatically request GitHub Copilot to analyze the changes:
+
+```markdown
+@github-copilot Please analyze the changes for UZP v1.0.7 and categorize them:
+
+## Changes to analyze:
+Based on the commits and PRs included in this release, please provide:
+
+### 🚀 New Features
+List any new functionality added
+
+### 🐛 Bug Fixes  
+List any bugs that were fixed
+
+### ⚡ Performance Improvements
+List any performance optimizations
+
+### 🔒 Security Updates
+List any security-related changes
+
+### 💥 Breaking Changes
+List any breaking changes (if any)
+
+### 📚 Documentation
+List documentation updates
+
+### 🧹 Other Changes
+List other minor changes, refactoring, etc.
+
+Please format this as markdown and focus on user-facing changes.
+```
+
+### How to Use Copilot Analysis
+
+1. **After release**: Go to the GitHub release page
+2. **Check comments**: Look for Copilot's analysis in the discussion
+3. **Copy insights**: Use Copilot's categorization for announcements
+4. **Future releases**: Reference previous analyses for consistency
 
 ## 📋 Prerequisites
 
@@ -184,6 +286,54 @@ After release, you can track:
 - **Patch releases** (1.0.x): Bug fixes, security updates → As needed
 - **Minor releases** (1.x.0): New features, improvements → Monthly
 - **Major releases** (x.0.0): Breaking changes → When necessary
+
+## 🎊 What's New in Release v2.0
+
+We've completely redesigned the release process with these major improvements:
+
+### ✨ **New Features**
+
+| Feature | Description |
+|---------|-------------|
+| 📝 **Interactive Preview** | See and edit release notes before publishing |
+| 🔗 **Auto PR Links** | Automatic linking to Pull Requests in changelog |
+| 🤖 **Copilot Integration** | AI-powered release notes analysis and categorization |
+| ✅ **Smart Confirmation** | Multiple validation steps before release |
+| 🔄 **Workflow Reuse** | NPM publishing reuses existing reliable workflow |
+| 🎨 **Multi-Editor Support** | VS Code, Nano, Vim, or manual editing |
+
+### 🛡️ **Improved Reliability**
+
+- **Zero-downtime releases**: Reuses battle-tested publish workflow
+- **Smart validation**: Checks version, authorization, and git status
+- **Safe rollback**: Clear instructions for emergency rollback
+- **Better error handling**: More descriptive error messages
+
+### 🚀 **Enhanced Developer Experience**
+
+- **One command release**: `./scripts/release.sh 1.0.7`
+- **Real-time preview**: See exactly what will be published
+- **Easy customization**: Edit release notes before publishing
+- **Progress tracking**: Clear workflow status and links
+
+---
+
+## 📋 Quick Reference
+
+```bash
+# 🚀 Start release
+./scripts/release.sh 1.0.8
+
+# 📝 Script will show preview
+# 🤔 Choose to edit or proceed
+# ✅ Confirm final version
+# 🎉 Automatic GitHub Actions takes over!
+
+# 📊 Monitor progress
+# - GitHub Actions: /actions
+# - Releases: /releases  
+# - NPM: npmjs.com/package/uzp-cli
+```
 
 ---
 
