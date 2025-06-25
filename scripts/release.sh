@@ -78,6 +78,129 @@ if git rev-parse "v$NEW_VERSION" >/dev/null 2>&1; then
     exit 1
 fi
 
+# Generate and preview release notes
+print_status "Generating release notes preview..."
+
+# Get previous tag for changelog
+PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+
+# Create preview release notes
+PREVIEW_FILE="/tmp/uzp-release-$NEW_VERSION.md"
+
+cat << EOF > $PREVIEW_FILE
+# UZP v$NEW_VERSION - User's Zecure Pocket
+
+## 🆕 What's New
+
+EOF
+
+if [ -n "$PREV_TAG" ]; then
+    echo "Changes since $PREV_TAG:" >> $PREVIEW_FILE
+    echo "" >> $PREVIEW_FILE
+    
+    # Generate enhanced changelog with PR links
+    git log $PREV_TAG..HEAD --oneline --no-merges | while read commit; do
+        commit_hash=$(echo "$commit" | cut -d' ' -f1)
+        commit_msg=$(echo "$commit" | cut -d' ' -f2-)
+        
+        # Try to extract PR number from commit message
+        pr_num=$(echo "$commit_msg" | grep -o '#[0-9]\+' | head -1)
+        
+        if [ -n "$pr_num" ]; then
+            pr_link="[${pr_num}](https://github.com/hungnguyen18/uzp-cli/pull/${pr_num#\#})"
+            echo "- $commit_msg $pr_link" >> $PREVIEW_FILE
+        else
+            echo "- $commit_msg" >> $PREVIEW_FILE
+        fi
+    done
+else
+    echo "- Initial release" >> $PREVIEW_FILE
+fi
+
+cat << EOF >> $PREVIEW_FILE
+
+## 📦 Installation
+
+### NPM (Recommended)
+\`\`\`bash
+npm install -g uzp-cli
+\`\`\`
+
+### Direct Download
+Download the appropriate binary for your platform from the assets below.
+
+## 🚀 Quick Start
+\`\`\`bash
+uzp init
+uzp add
+uzp inject -p myapp > .env
+\`\`\`
+
+## ✨ Features
+- 🔐 AES-256-GCM encryption
+- 🔄 Auto-unlock workflow
+- 📄 Environment file export (.env)
+- 📋 Clipboard integration
+- 🔍 Search functionality
+
+## 🖥️ Platform Support
+- **macOS**: Intel (x64) & Apple Silicon (ARM64)
+- **Linux**: x64 & ARM64
+- **Windows**: x64 & ARM64
+
+## 🔗 Links
+- 📖 [Documentation](https://github.com/hungnguyen18/uzp-cli#readme)
+- 🐛 [Report Issues](https://github.com/hungnguyen18/uzp-cli/issues)
+- 💬 [Discussions](https://github.com/hungnguyen18/uzp-cli/discussions)
+EOF
+
+print_success "Release notes preview generated!"
+echo ""
+echo "📋 Release Notes Preview:"
+echo "=========================="
+cat $PREVIEW_FILE
+echo "=========================="
+echo ""
+
+# Ask user if they want to edit
+read -p "🤔 Do you want to edit the release notes? (y/N): " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    # Open editor (try different editors)
+    if command -v code >/dev/null 2>&1; then
+        print_status "Opening VS Code for editing..."
+        code $PREVIEW_FILE
+        read -p "Press Enter after you finish editing in VS Code..."
+    elif command -v nano >/dev/null 2>&1; then
+        print_status "Opening nano for editing..."
+        nano $PREVIEW_FILE
+    elif command -v vim >/dev/null 2>&1; then
+        print_status "Opening vim for editing..."
+        vim $PREVIEW_FILE
+    else
+        print_warning "No suitable editor found. You can manually edit: $PREVIEW_FILE"
+        read -p "Press Enter when you're ready to continue..."
+    fi
+    
+    print_success "Release notes updated!"
+fi
+
+# Confirm before proceeding
+echo ""
+print_status "Final release notes:"
+echo "===================="
+cat $PREVIEW_FILE
+echo "===================="
+echo ""
+
+read -p "🚀 Proceed with release v$NEW_VERSION? (y/N): " -n 1 -r
+echo
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    print_error "Release cancelled by user"
+    rm -f $PREVIEW_FILE
+    exit 1
+fi
+
 # Update package.json version
 print_status "Updating package.json version..."
 if command -v jq >/dev/null 2>&1; then
@@ -117,17 +240,31 @@ print_status "Creating and pushing tag v$NEW_VERSION..."
 git tag "v$NEW_VERSION"
 git push origin "v$NEW_VERSION"
 
+# Store custom release notes for GitHub Actions (if available)
+if [ -f "$PREVIEW_FILE" ]; then
+    RELEASE_NOTES_DIR=".github/release-notes"
+    mkdir -p "$RELEASE_NOTES_DIR"
+    cp "$PREVIEW_FILE" "$RELEASE_NOTES_DIR/v$NEW_VERSION.md"
+    git add "$RELEASE_NOTES_DIR/v$NEW_VERSION.md"
+    print_success "Custom release notes saved for GitHub Actions"
+fi
+
 print_success "🎉 Release process initiated!"
 echo ""
 echo "The GitHub Actions workflow will now:"
 echo "  1. 🔨 Build cross-platform binaries"
-echo "  2. 📦 Create GitHub release with auto-generated description"
+echo "  2. 📦 Create GitHub release with your custom description"
 echo "  3. 📤 Upload binaries to the release"
-echo "  4. 🚀 Publish to NPM"
+echo "  4. 🚀 Publish to NPM (reusing existing workflow)"
+echo "  5. 🤖 Request Copilot analysis for enhanced release notes"
 echo ""
 echo "📋 Monitor progress at:"
 echo "  🔗 GitHub Actions: https://github.com/hungnguyen18/uzp-cli/actions"
 echo "  📦 Releases: https://github.com/hungnguyen18/uzp-cli/releases"
 echo "  📡 NPM: https://www.npmjs.com/package/uzp-cli"
 echo ""
+
+# Cleanup
+rm -f "$PREVIEW_FILE"
+
 print_success "Done! 🚀" 
