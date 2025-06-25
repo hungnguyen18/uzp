@@ -59,22 +59,43 @@ jobs:
             touch changed_files.txt
           fi
           
-          # Categorize changes
+          # Categorize changes - handle multiline properly
           security_files=$(grep -E "(crypto|security|vault|storage)" changed_files.txt || echo "")
           go_files=$(grep "\.go$" changed_files.txt || echo "")
           doc_files=$(grep -E "\.(md|txt)$" changed_files.txt || echo "")
           workflow_files=$(grep "\.github/" changed_files.txt || echo "")
           
-          echo "security_changes=${security_files}" >> $GITHUB_OUTPUT
-          echo "go_changes=${go_files}" >> $GITHUB_OUTPUT  
-          echo "doc_changes=${doc_files}" >> $GITHUB_OUTPUT
-          echo "workflow_changes=${workflow_files}" >> $GITHUB_OUTPUT
+          # Use heredoc format for multiline outputs
+          {
+            echo "security_changes<<EOF"
+            echo "$security_files"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+          
+          {
+            echo "go_changes<<EOF"
+            echo "$go_files"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+          
+          {
+            echo "doc_changes<<EOF"
+            echo "$doc_files"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+          
+          {
+            echo "workflow_changes<<EOF"
+            echo "$workflow_files"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
           
           # Count changes
           total_files=$(wc -l < changed_files.txt)
           echo "total_files=${total_files}" >> $GITHUB_OUTPUT
       
       - name: Get changed files via GitHub API (fallback)
+        id: api-fallback
         if: always()
         uses: actions/github-script@v7
         with:
@@ -114,14 +135,15 @@ jobs:
               const docFiles = files.filter(f => f.filename.match(/\.(md|txt)$/)).map(f => f.filename).join('\n');
               const workflowFiles = files.filter(f => f.filename.includes('.github/')).map(f => f.filename).join('\n');
               
-              // Update outputs by writing to GITHUB_OUTPUT
+              // Update outputs using heredoc format for multiline content
               const outputFile = process.env.GITHUB_OUTPUT;
               
               if (outputFile) {
-                fs.appendFileSync(outputFile, `security_changes=${securityFiles}\n`);
-                fs.appendFileSync(outputFile, `go_changes=${goFiles}\n`);
-                fs.appendFileSync(outputFile, `doc_changes=${docFiles}\n`);
-                fs.appendFileSync(outputFile, `workflow_changes=${workflowFiles}\n`);
+                // Write with heredoc format to handle multiline content
+                fs.appendFileSync(outputFile, `security_changes<<EOF\n${securityFiles}\nEOF\n`);
+                fs.appendFileSync(outputFile, `go_changes<<EOF\n${goFiles}\nEOF\n`);
+                fs.appendFileSync(outputFile, `doc_changes<<EOF\n${docFiles}\nEOF\n`);
+                fs.appendFileSync(outputFile, `workflow_changes<<EOF\n${workflowFiles}\nEOF\n`);
                 fs.appendFileSync(outputFile, `total_files=${files.length}\n`);
               }
               
@@ -154,7 +176,12 @@ jobs:
             security_issues="${security_issues}\n- ⚠️ Potential unchecked errors found"
           fi
           
-          echo "security_issues=${security_issues}" >> $GITHUB_OUTPUT
+          # Use heredoc for multiline security issues
+          {
+            echo "security_issues<<EOF"
+            echo -e "$security_issues"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
         id: security-check
       
       - name: Code Quality Check
@@ -180,7 +207,12 @@ jobs:
             quality_issues="${quality_issues}\n- 📚 Exported functions without comments found"
           fi
           
-          echo "quality_issues=${quality_issues}" >> $GITHUB_OUTPUT
+          # Use heredoc for multiline quality issues
+          {
+            echo "quality_issues<<EOF"
+            echo -e "$quality_issues"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
         id: quality-check
       
       - name: PR Checklist Validation
@@ -204,7 +236,12 @@ jobs:
             fi
           fi
           
-          echo "checklist_issues=${checklist_issues}" >> $GITHUB_OUTPUT
+          # Use heredoc for multiline checklist issues
+          {
+            echo "checklist_issues<<EOF"
+            echo -e "$checklist_issues"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
       
       - name: Generate Review Comment
         id: generate-comment
