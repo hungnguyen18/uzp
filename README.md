@@ -64,16 +64,19 @@ cp .npmrc.example .npmrc   # Edit for custom registries
 ## Quick Start
 
 ```bash
-# 1. Initialize vault with master password
+# 1. Check installation
+uzp -v                             # Verify installation
+
+# 2. Initialize vault with master password
 uzp init
 
-# 2. Add your first secret
+# 3. Add your first secret
 uzp add
 # Project: myapp
 # Key: api_key 
 # Value: sk-1234567890abcdef
 
-# 3. Use your secrets
+# 4. Use your secrets
 uzp get myapp/api_key              # Display secret
 uzp copy myapp/api_key             # Copy to clipboard
 uzp inject -p myapp > .env         # Export as .env file
@@ -92,6 +95,7 @@ uzp inject -p myapp > .env         # Export as .env file
 | `uzp search <keyword>` | Search secrets | `uzp search api` |
 | `uzp inject -p <project>` | Export to .env format | `uzp inject -p myapp > .env` |
 | `uzp reset` | Delete all data | `uzp reset` |
+| `uzp -v, --version` | Show version information | `uzp -v` |
 
 ## Security
 
@@ -117,8 +121,11 @@ For security issues, see our [Security Policy](SECURITY.md).
 
 ### Basic Workflow
 ```bash
-# Initialize and add secrets
-uzp init
+# Check version and initialize
+uzp -v                      # Check installed version
+uzp init                    # Initialize vault
+
+# Add secrets
 uzp add  # myapp/api_key
 uzp add  # myapp/database_url
 uzp add  # aws/access_key_id
@@ -173,7 +180,8 @@ Our [Contributing Guide](CONTRIBUTING.md) covers everything from 5-minute setup 
 
 ```bash
 # Check your installed version
-uzp --version
+uzp -v          # Short form
+uzp --version   # Long form
 
 # Update to latest version  
 npm update -g uzp-cli
