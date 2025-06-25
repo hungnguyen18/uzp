@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/hungnguyen18/uzp-cli/internal/crypto"
 )
@@ -24,115 +23,22 @@ type EncryptedVault struct {
 	Data string `json:"data"` // Base64 encoded encrypted data
 }
 
-// Session data for persistence
-type SessionData struct {
-	UnlockedAt time.Time `json:"unlocked_at"`
-	KeyHash    string    `json:"key_hash"`
-	ExpiresAt  time.Time `json:"expires_at"`
-}
-
 type Vault struct {
-	path        string
-	sessionPath string
-	data        *VaultData
-	key         []byte
-	unlocked    bool
-	unlockedAt  time.Time
+	path     string
+	data     *VaultData
+	key      []byte
+	unlocked bool
 }
-
-// Session timeout - 15 minutes
-const SessionTimeout = 15 * time.Minute
 
 // NewVault creates a new vault instance
 func NewVault() *Vault {
 	homeDir, _ := os.UserHomeDir()
 	vaultDir := filepath.Join(homeDir, ".uzp")
 	vaultPath := filepath.Join(vaultDir, "uzp.vault")
-	sessionPath := filepath.Join(vaultDir, ".session")
 
-	v := &Vault{
-		path:        vaultPath,
-		sessionPath: sessionPath,
+	return &Vault{
+		path: vaultPath,
 	}
-
-	// Try to restore session on creation
-	v.tryRestoreSession()
-
-	return v
-}
-
-// tryRestoreSession attempts to restore session from file
-func (v *Vault) tryRestoreSession() {
-	sessionData, err := v.loadSession()
-	if err != nil {
-		return // No valid session found
-	}
-
-	// Check if session is expired
-	if time.Now().After(sessionData.ExpiresAt) {
-		v.clearSession()
-		return
-	}
-
-	// Try to unlock vault using saved session
-	if err := v.restoreFromSession(sessionData); err != nil {
-		v.clearSession()
-		return
-	}
-}
-
-// saveSession saves current session to file
-func (v *Vault) saveSession() error {
-	if !v.unlocked {
-		return nil
-	}
-
-	sessionData := SessionData{
-		UnlockedAt: v.unlockedAt,
-		KeyHash:    crypto.HashData(v.key),
-		ExpiresAt:  time.Now().Add(SessionTimeout),
-	}
-
-	data, err := json.Marshal(sessionData)
-	if err != nil {
-		return err
-	}
-
-	// Create vault directory if not exists
-	dir := filepath.Dir(v.sessionPath)
-	if err := os.MkdirAll(dir, 0700); err != nil {
-		return err
-	}
-
-	return os.WriteFile(v.sessionPath, data, 0600)
-}
-
-// loadSession loads session from file
-func (v *Vault) loadSession() (*SessionData, error) {
-	data, err := os.ReadFile(v.sessionPath)
-	if err != nil {
-		return nil, err
-	}
-
-	var sessionData SessionData
-	if err := json.Unmarshal(data, &sessionData); err != nil {
-		return nil, err
-	}
-
-	return &sessionData, nil
-}
-
-// restoreFromSession restores vault state from session data
-func (v *Vault) restoreFromSession(sessionData *SessionData) error {
-	// We need to derive the key again - we can't safely store it in session
-	// For now, we'll just mark as needing unlock
-	v.unlocked = false
-	return nil
-}
-
-// clearSession removes session file
-func (v *Vault) clearSession() {
-	os.Remove(v.sessionPath)
 }
 
 // Initialize creates a new vault with the given master password
@@ -170,20 +76,9 @@ func (v *Vault) Initialize(masterPassword string) error {
 
 	v.key = key
 	v.unlocked = true
-	v.unlockedAt = time.Now()
 
-	// Save vault and session
-	if err := v.save(); err != nil {
-		return err
-	}
-
-	// Save session (non-critical error)
-	if err := v.saveSession(); err != nil {
-		// Log warning but don't fail initialization
-		fmt.Fprintf(os.Stderr, "Warning: failed to save session: %v\n", err)
-	}
-
-	return nil
+	// Save vault
+	return v.save()
 }
 
 // Unlock unlocks the vault with the master password
@@ -231,31 +126,25 @@ func (v *Vault) Unlock(masterPassword string) error {
 	v.data = &vaultData
 	v.key = key
 	v.unlocked = true
-	v.unlockedAt = time.Now()
-
-	// Save session (non-critical error)
-	if err := v.saveSession(); err != nil {
-		// Log warning but don't fail unlock
-		fmt.Fprintf(os.Stderr, "Warning: failed to save session: %v\n", err)
-	}
 
 	return nil
 }
 
 // Lock locks the vault
 func (v *Vault) Lock() {
+	// Clear sensitive data from memory
+	if v.key != nil {
+		for i := range v.key {
+			v.key[i] = 0
+		}
+	}
 	v.key = nil
 	v.unlocked = false
 	v.data = nil
-	v.clearSession()
 }
 
 // IsUnlocked checks if vault is unlocked
 func (v *Vault) IsUnlocked() bool {
-	// Check session validity if not currently unlocked
-	if !v.unlocked {
-		v.tryRestoreSession()
-	}
 	return v.unlocked
 }
 

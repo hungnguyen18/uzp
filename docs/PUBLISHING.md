@@ -42,7 +42,7 @@ User's Zecure Pocket - A secure CLI tool for managing secrets.
 
 ### Features
 - 🔐 AES-256-GCM encryption
-- 🔄 Auto-unlock workflow
+- 🔄 On-demand unlock workflow
 - 📄 Environment file export (.env)
 - 📋 Clipboard integration
 - 🔍 Search functionality

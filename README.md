@@ -26,7 +26,7 @@ A professional command-line tool for securely storing and managing sensitive inf
 ### Core Capabilities
 - 🔐 **AES-256-GCM encryption** with scrypt key derivation (N=32768, r=8, p=1)
 - 🔑 **Master password protection** - never stored, only hashed
-- 🔄 **Auto-unlock** - prompts for password when needed, no session management
+- 🔄 **On-demand unlock** - prompts for password when needed, no manual unlock required
 - 📁 **Project-based organization** - group secrets by application/service
 - 📋 **Clipboard integration** with automatic clearing after TTL
 - 🔍 **Search functionality** for quick access across all projects
@@ -37,6 +37,7 @@ A professional command-line tool for securely storing and managing sensitive inf
 ### Security Features
 - **Memory safety**: Sensitive data cleared from memory immediately after use
 - **No password storage**: Only password hash stored for verification
+- **No session persistence**: Password required for each vault operation (stateless)
 - **Secure vault location**: 
   - macOS/Linux: `~/.uzp/uzp.vault`
   - Windows: `%USERPROFILE%\.uzp\uzp.vault`

@@ -20,10 +20,8 @@
 | Lệnh                          | Mô tả                                                                 |
 | ----------------------------- | --------------------------------------------------------------------- |
 | `uzp init`                    | Khởi tạo vault lần đầu (tạo file mã hóa, yêu cầu master password)     |
-| `uzp unlock`                  | Nhập master password để mở vault (và giữ unlock trong phiên hiện tại) |
-| `uzp lock`                    | Khoá vault thủ công                                                   |
 | `uzp add`                     | Thêm secret: `project`, `key`, `value`                                |
-| `uzp get <project/key>`       | Truy xuất giá trị từ vault                                            |
+| `uzp get <project/key>`       | Truy xuất giá trị từ vault (prompt password nếu cần)                  |
 | `uzp copy <project/key>`      | Copy giá trị vào clipboard, tự xóa sau TTL (default: 15s)             |
 | `uzp list`                    | Xem danh sách các project/key hiện có                                 |
 | `uzp search <keyword>`        | Tìm kiếm theo tên key hoặc project                                    |
