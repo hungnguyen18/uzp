@@ -178,7 +178,7 @@ Subscribe to security notifications:
 
 ---
 
-**Last updated**: January 2025  
-**Next review**: April 2025
+**Last updated**: June 2025  
+**Next review**: December 2025
 
 Thank you for helping keep UZP-CLI and its users safe! 🔒

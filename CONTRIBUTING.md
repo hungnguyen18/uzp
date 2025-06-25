@@ -884,4 +884,4 @@ For questions about this guide, please open an issue with the label `documentati
 
 ---
 
-*Last updated: January 2025*
+*Last updated: June 2025*
