@@ -1,0 +1,17 @@
+# Critical files require owner approval (security-sensitive)
+/.github/workflows/ @hungnguyen18
+/scripts/ @hungnguyen18
+/SECURITY.md @hungnguyen18
+/package.json @hungnguyen18
+/go.mod @hungnguyen18
+
+# Core crypto/security code requires review
+/internal/crypto/ @hungnguyen18
+/internal/storage/ @hungnguyen18
+
+# Documentation - community can contribute
+# *.md (no specific owner - anyone can contribute docs)
+
+# Other source code - maintainer review preferred but not required
+# /cmd/ (let CI/CD and PR review process handle this)
+# /internal/utils/ (let CI/CD handle this) 

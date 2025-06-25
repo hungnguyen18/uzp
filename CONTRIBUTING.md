@@ -1,6 +1,195 @@
 # Contributing to UZP-CLI
 
-Thank you for your interest in contributing to UZP-CLI! This document provides guidelines and best practices to ensure code quality, security, and maintainability.
+Thank you for your interest in contributing to UZP-CLI! This guide covers everything from quick setup to comprehensive development practices.
+
+## 🚀 **Quick Start - Get Contributing in 5 Minutes**
+
+### TL;DR - Super Quick Setup
+```bash
+# 1. Fork on GitHub, then:
+git clone https://github.com/YOUR_USERNAME/uzp-cli.git
+cd uzp-cli
+
+# 2. Create your feature branch
+git checkout -b feature/your-feature-name
+
+# 3. Make changes, test locally
+go run . --help  # Test your changes
+
+# 4. Commit and push
+git add .
+git commit -m "feat: add awesome feature"
+git push origin feature/your-feature-name
+
+# 5. Create PR on GitHub
+```
+
+**That's it!** 🎉 CI will test everything automatically, and if you're changing non-critical files, your PR can be merged quickly after CI passes.
+
+### 🧪 **Quick Testing - Before You Submit**
+```bash
+# Test your changes work
+go build -o uzp .
+./uzp --help                    # Basic functionality
+./uzp init                      # Test init command
+./uzp add test-entry           # Test add command
+
+# Run tests
+go test ./...
+
+# That's enough! CI will do comprehensive testing
+```
+
+### 🤝 What Can You Contribute?
+
+| Type | Examples | Approval Process |
+|------|----------|------------------|
+| 🐛 **Bug Fixes** | Fix commands, error handling | ✅ CI passes → Ready to merge |
+| ✨ **Features** | New commands, utilities | ✅ CI passes → Ready to merge |
+| 📚 **Documentation** | README, help text, examples | ✅ CI passes → Ready to merge |
+| 🧹 **Code Cleanup** | Refactoring, optimization | ✅ CI passes → Ready to merge |
+| 🔒 **Security Code** | Crypto, storage core | 🔍 Owner review required |
+
+**Most contributions only need CI to pass!** Only core security files need manual review.
+
+---
+
+## 🔍 **How the Review Process Works**
+
+### ✅ **Regular Code Changes** (90% of PRs)
+```mermaid
+graph LR
+    A[Submit PR] --> B[CI Runs]
+    B --> C{CI Passes?}
+    C -->|Yes| D[Ready to Merge]
+    C -->|No| E[Fix Issues]
+    E --> B
+    D --> F[Maintainer Merges]
+```
+
+**Files that follow this path:**
+- `/cmd/` - CLI commands
+- `/internal/utils/` - Utility functions  
+- `*.md` - Documentation
+- `/scripts/` - Build scripts (non-workflow)
+- Test files
+
+**Process:**
+1. You submit PR
+2. GitHub Actions runs tests automatically
+3. If CI passes → PR is **ready to merge** (no manual review needed)
+4. Maintainer merges when convenient
+
+### 🔒 **Security-Critical Changes** (10% of PRs)
+```mermaid
+graph LR
+    A[Submit PR] --> B[CI Runs]
+    B --> C{CI Passes?}
+    C -->|Yes| D[👑 Owner Review Required]
+    C -->|No| E[Fix Issues]
+    E --> B
+    D --> F{Review Approved?}
+    F -->|Yes| G[Merge]
+    F -->|No| H[Address Feedback]
+    H --> D
+```
+
+**Files that require owner review:**
+- `/internal/crypto/` - Encryption/decryption
+- `/internal/storage/` - Vault storage logic
+- `/.github/workflows/` - CI/CD security
+- `/package.json` - Dependencies
+- `/go.mod` - Go dependencies
+- `/SECURITY.md` - Security policy
+
+**Process:**
+1. You submit PR  
+2. CI runs automatically
+3. Even if CI passes → **Manual review required** from owner
+4. Owner reviews security implications
+5. Owner approves → Merge
+
+### 🤖 **What CI Checks Automatically**
+
+Our CI pipeline runs these checks on **every PR**:
+
+```yaml
+✅ Go Tests: go test ./...
+✅ Build Test: Cross-platform builds (Linux, macOS, Windows)  
+✅ Code Lint: golangci-lint
+✅ Security Scan: gosec, nancy vulnerability scanner
+✅ Node.js Package: npm install test
+```
+
+**If CI fails → PR cannot be merged** (regardless of file type)
+
+### 📋 **Branch Protection Rules**
+
+```yaml
+Main Branch Protection:
+  ✅ Require PR before merge
+  ✅ Require status checks (CI must pass)
+  ✅ Require conversation resolution
+  ❌ Auto-merge enabled: No (manual merge only)
+  
+CODEOWNERS Protection:
+  🔒 Critical files: Owner approval required
+  🟢 Other files: No approval required (after CI)
+```
+
+**"Auto-merge" = Ready to merge after CI, no manual review bottleneck**
+
+---
+
+## 🚀 **Release Process**
+
+### 📦 **How Releases Work**
+
+UZP-CLI follows semantic versioning and regular release cycles:
+
+```yaml
+Version Format: vMAJOR.MINOR.PATCH
+Examples: v1.0.0, v1.1.0, v1.0.1
+
+Release Types:
+  🔴 Major (v1.0.0 → v2.0.0): Breaking changes
+  🟡 Minor (v1.0.0 → v1.1.0): New features, backward compatible  
+  🟢 Patch (v1.0.0 → v1.0.1): Bug fixes, security updates
+```
+
+### 📅 **Release Schedule**
+
+- 🟢 **Patch releases**: As needed for critical bugs/security
+- 🟡 **Minor releases**: Monthly (new features)
+- 🔴 **Major releases**: When breaking changes are necessary
+
+### 🎯 **When Your Contribution Gets Released**
+
+| Contribution Type | Release Timeline |
+|-------------------|------------------|
+| 🐛 **Critical Bug Fix** | Next patch release (within days) |
+| 🔒 **Security Fix** | Immediate patch release |
+| ✨ **New Feature** | Next minor release (monthly) |
+| 📚 **Documentation** | Next minor release |
+| 💥 **Breaking Change** | Next major release |
+
+### 📋 **Release Notes**
+
+All releases include detailed notes covering:
+- ✨ New features and improvements
+- 🐛 Bug fixes and security updates  
+- 💥 Breaking changes and migration guides
+- 🙏 Contributor acknowledgments
+
+**Your contributions will be credited in release notes!** 🎉
+
+### 🔔 **Stay Updated**
+
+- 📧 **Watch releases**: Click "Watch" → "Releases only" on GitHub
+- 📦 **NPM notifications**: `npm view uzp-cli versions --json`
+- 🐙 **GitHub releases**: https://github.com/hungnguyen18/uzp-cli/releases
+
+---
 
 ## 🎯 **Project Philosophy**
 
@@ -12,6 +201,9 @@ UZP-CLI is a **security-focused** tool that handles sensitive data. Every contri
 
 ## 📋 **Table of Contents**
 
+- [Quick Start](#-quick-start---get-contributing-in-5-minutes)
+- [Review Process](#-how-the-review-process-works)
+- [Release Process](#-release-process)
 - [Getting Started](#-getting-started)
 - [Development Workflow](#-development-workflow)
 - [Code Standards](#-code-standards)
