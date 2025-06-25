@@ -157,7 +157,7 @@ jobs:
           cat changelog.md
       
       - name: Request Copilot Analysis
-        uses: github/github-script@v7
+        uses: actions/github-script@v6
         with:
           script: |
             // Create a comment asking Copilot to analyze the release
