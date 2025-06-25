@@ -8,11 +8,13 @@ UZP-CLI is a security-focused tool designed to handle sensitive information such
 
 We provide security updates for the following versions:
 
-| Version | Supported          | Notes |
-| ------- | ------------------ | ----- |
-| 1.0.x   | :white_check_mark: | Current stable release |
-| 0.9.x   | :white_check_mark: | Legacy support until 2024-06-01 |
-| < 0.9   | :x:                | Please upgrade immediately |
+| Version | Supported          | Go Requirement | Notes |
+| ------- | ------------------ | -------------- | ----- |
+| 1.0.x   | :white_check_mark: | Go 1.23.10+    | Current stable release |
+| 0.9.x   | :white_check_mark: | Go 1.21+       | Legacy support until 2024-06-01 |
+| < 0.9   | :x:                | -              | Please upgrade immediately |
+
+> **⚠️ Security Notice**: Version 1.0.x requires Go 1.23.10+ to avoid [GO-2025-3750](https://pkg.go.dev/vuln/GO-2025-3750) affecting file operations.
 
 **Recommendation:** Always use the latest stable version for the best security posture.
 

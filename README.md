@@ -3,6 +3,7 @@
 [![npm downloads](https://img.shields.io/npm/dm/uzp-cli.svg)](https://www.npmjs.com/package/uzp-cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/hungnguyen18/uzp-cli)](https://golang.org/)
+[![Go 1.23.10+](https://img.shields.io/badge/Go-1.23.10+-blue.svg)](https://golang.org/dl/)
 [![Security](https://img.shields.io/badge/Security-AES--256--GCM-green.svg)](SECURITY.md)
 [![Contributing](https://img.shields.io/badge/Contributing-Welcome-brightgreen.svg)](CONTRIBUTING.md)
 

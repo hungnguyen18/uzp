@@ -217,9 +217,11 @@ UZP-CLI is a **security-focused** tool that handles sensitive data. Every contri
 
 ### Prerequisites
 
-- **Go**: 1.19+ (for core CLI development)
+- **Go**: 1.23.10+ (for core CLI development, required for security fixes)
 - **Node.js**: 18+ (for build scripts and tooling)
 - **Git**: 2.30+ with proper configuration
+
+> **⚠️ Important**: Go 1.23.10+ is required to avoid security vulnerability [GO-2025-3750](https://pkg.go.dev/vuln/GO-2025-3750) in file operations.
 
 ### Initial Setup
 
