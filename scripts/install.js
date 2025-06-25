@@ -411,6 +411,23 @@ async function install() {
           fs.chmodSync(BINARY_PATH, '755');
         }
         
+        // Create symlink manually for cached installation too
+        try {
+          const npmBin = execSync('npm bin -g', { encoding: 'utf8' }).trim();
+          const symlinkPath = path.join(npmBin, BINARY_NAME);
+          
+          // Remove existing symlink if it exists
+          if (fs.existsSync(symlinkPath)) {
+            fs.unlinkSync(symlinkPath);
+          }
+          
+          // Create new symlink
+          fs.symlinkSync(BINARY_PATH, symlinkPath);
+          console.log(`🔗 Created symlink: ${symlinkPath} -> ${BINARY_PATH}`);
+        } catch (error) {
+          console.log(`⚠️  Could not create symlink (${error.message})`);
+        }
+
         console.log('✅ UZP installed successfully from cache!');
         console.log('');
         console.log('🚀 Get started:');
@@ -460,6 +477,25 @@ async function install() {
       throw error;
     }
     
+    // Create symlink manually (NPM doesn't create it when binary is downloaded in postinstall)
+    try {
+      const npmBin = execSync('npm bin -g', { encoding: 'utf8' }).trim();
+      const symlinkPath = path.join(npmBin, BINARY_NAME);
+      
+      // Remove existing symlink if it exists
+      if (fs.existsSync(symlinkPath)) {
+        fs.unlinkSync(symlinkPath);
+      }
+      
+      // Create new symlink
+      fs.symlinkSync(BINARY_PATH, symlinkPath);
+      console.log(`🔗 Created symlink: ${symlinkPath} -> ${BINARY_PATH}`);
+    } catch (error) {
+      console.log(`⚠️  Could not create symlink (${error.message})`);
+      console.log('   The binary is installed but may not be in PATH');
+      console.log(`   Binary location: ${BINARY_PATH}`);
+    }
+
     console.log('✅ UZP installed successfully!');
     console.log('💾 Binary cached for future installations');
     console.log('');
