@@ -31,8 +31,9 @@ jobs:
           echo "pr_title=$PR_TITLE" >> $GITHUB_OUTPUT
           echo "pr_author=${{ github.event.pull_request.user.login }}" >> $GITHUB_OUTPUT
           echo "base_ref=${{ github.event.pull_request.base.ref }}" >> $GITHUB_OUTPUT
-          export HEAD_REF="${{ github.event.pull_request.head.ref }}"
           echo "head_ref=$HEAD_REF" >> $GITHUB_OUTPUT
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
       
       - name: Analyze PR Changes
         id: analyze-changes
